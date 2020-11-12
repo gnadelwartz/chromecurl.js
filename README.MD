@@ -32,6 +32,10 @@
 		-o|--output <file> - write html to file
 		--create-dirs - create path to file named by -o
 
+		--chromearg - add chromium command line arg (curl.js only), see
+				https://peter.sh/experiments/chromium-command-line-switches/
+
+
  Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
  upload is currently not supported. FTP may never supported.
 

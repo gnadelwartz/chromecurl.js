@@ -19,13 +19,15 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.', '',
 	usage, '',
 	'	--wait <s> - wait seconds to finally render page between load and output',
-	'	-m|--max-time seconds - timeout, default 30s',
+	'	-m|--max-time seconds - timeout, default 30s (curl.js only)',
 	'	--proxy|--socks4|--socks5 <host[:port]>',
 	'	-A|--user-agent <agent-string>',
 	'	-e|--referer <URL>',
 	'	-k|--insecure - allow insecure SSL connections',
 	'	-o|--output <file> - write html to file',
-	'	--create-dirs - create path to file named by -o',
+	'	--create-dirs - create path to file named by -o','',
+	'	--chromearg - add chromium command line arg (curl.js only), see,',
+	'			https://peter.sh/experiments/chromium-command-line-switches/',
 	''
 	].join("\n");
 
@@ -107,6 +109,10 @@ for (i=2; i<process.argv.length; i++) {
 
 		case '--create-dirs'==arg:
 			mkdir=true;
+			continue;
+
+		case '--chromearg' ==arg:
+			pupargs.args.push(process.argv[++i]);
 			continue;
 
 		// curl options with second arg
