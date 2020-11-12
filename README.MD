@@ -15,14 +15,17 @@
 
 ### Usage
 
- 	[node] curl.js [--wait s] [--maxtime s] [--proxy|--socks[45] host[:port]] [curl_opt] URL
+ 	[node] curl.js [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL
 
-	curl.js is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.
+	curl.js is a simple drop in replacement for curl, using pupeteer (chromium) to download html
+	code of web pages composed with javascript.
 
 		--wait <s> - wait seconds to finally render page between load and output (curl.js only)
 
 		-m|--max-time seconds - timeout, default 30s
-		--proxy|--socks4|--socks5 <host[:port]>
+		-X|--proxy <host[:port]> - http proxy
+		--socks4 <host[:port]> - socks version 4 proxy
+		--socks5|--socks5-hostname  <host[:port]> - socks version 5 proxy
 		-A|--user-agent <agent-string>
 		-e|--referer <URL>
 		-k|--insecure - allow insecure SSL connections

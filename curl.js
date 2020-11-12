@@ -13,7 +13,7 @@ const path = require('path')
 const puppeteer = require('puppeteer');
 
 // default values ----------------------------
-const usage="usage: "+process.argv[1].replace(/.*\//,'')+" [--wait s] [--maxtime s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const usage="usage: "+process.argv[1].replace(/.*\//,'')+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
 
 const help=['', process.argv[1].replace(/.*\//,'')+
 	' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.', '',
@@ -83,8 +83,7 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith("--socks5"): // socks5 proxy
 			pupargs.args.push('--proxy-server=socks5://'+process.argv[++i]);
 			continue;
-		case arg.startsWith('--proxy'): // http proxy
-		case '-X'==arg:
+		case ['-X','--proxy','--proxy1.0'].indexOf[arg]: // http proxy
 			pupargs.args.push('--proxy-server=http://'+process.argv[++i]);
 			continue;
 
