@@ -6,11 +6,11 @@
 
 	npm install puppeteer
 
- Makeing `curl.js` executeable on Linux/Unix/BSD system allow run it without typing node everytime.
+ Making `curl.js` executeable on Linux/Unix/BSD system allow run it without typing node everytime.
 
  (c) 2020 gnadelwartz kay@rrr.de
 
- released to the public domain where applicable.
+ Released to the public domain where applicable.
  Otherwise, it is released under the terms of the WTFPLv2
 
 ### Usage
@@ -29,7 +29,7 @@
 		-o|--output <file> - write html to file
 		--create-dirs - create path to file named by -o
 
- Other curl otions are not implemented and ignored. Thus you can only make GET requests in an URL, PUSH regests and data/form
+ Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
  upload is currently not supported. FTP may never supported.
 
 ### default values
