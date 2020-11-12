@@ -24,7 +24,7 @@
 
 		-m|--max-time seconds - timeout, default 30s
 		-X|--proxy <host[:port]> - http proxy
-		--socks4 <host[:port]> - socks version 4 proxy
+		--socks4|--socks4a <host[:port]> - socks version 4 proxy
 		--socks5|--socks5-hostname  <host[:port]> - socks version 5 proxy
 		-A|--user-agent <agent-string>
 		-e|--referer <URL>
@@ -42,7 +42,7 @@
  Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
  upload is currently not supported. FTP may never supported.
 
- Note: curl.js always follows redirects, like curl with -L|--location. If you want to see/trace redirects, you must use curl.
+ Note: `curl.js` always follows redirects, like curl with `-L|--location`. If you want to see/trace redirects, you must use curl.
 
 ### default values
 
