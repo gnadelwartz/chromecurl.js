@@ -19,7 +19,8 @@
 
 	curl.js is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.
 
-		--wait <s> - wait seconds to finally render page between load and output
+		--wait <s> - wait seconds to finally render page between load and output (curl.js only)
+
 		-m|--max-time seconds - timeout, default 30s
 		--proxy|--socks4|--socks5 <host[:port]>
 		-A|--user-agent <agent-string>
@@ -28,8 +29,8 @@
 		-o|--output <file> - write html to file
 		--create-dirs - create path to file named by -o
 
- other curl otions are not implemented and simply ignored. Thus you can only use GET requestst, PUSH and data/form
- is currently not supported. FTP will never supported.
+ Other curl otions are not implemented and ignored. Thus you can only make GET requests in an URL, PUSH regests and data/form
+ upload is currently not supported. FTP may never supported.
 
 ### default values
 
