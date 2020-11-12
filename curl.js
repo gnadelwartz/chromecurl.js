@@ -27,7 +27,7 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	-o|--output <file> - write html to file',
 	'	--create-dirs - create path to file named by -o',
 	'	-b|--cookie <file> - raed cookies from file',
-	'	-c|--cookie--jar <file> - raed cookies from file',
+	'	-c|--cookie--jar <file> - write cookies to file',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
