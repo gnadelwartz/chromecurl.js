@@ -39,6 +39,8 @@
  Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
  upload is currently not supported. FTP may never supported.
 
+ Note: curl.js always follows redirects, like curl with -L|--location. If you want to see/trace redirects, you must use curl.
+
 ### default values
 
 ```javascript
