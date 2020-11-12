@@ -181,34 +181,33 @@ if ( ! isURL(url) ) { // not url
   			}, timeout*1000
 		);}
 	
-	// goto page, wait until loaded
+	// goto page, load cookies, wait until page loaded
 	const page = await browser.newPage();
 	if (cookiefrom) {
-		// ignore errors on save
-		try { 
+		try { // ignore errors on save
 		var cookies = JSON.parse(fs.readFileSync(cookiefrom));
 		} catch (ignore) {  }
-	}
-	if (cookiefrom && cookies) {
-		await page.setCookie(...cookies)
+		if (cookies) {
+			await page.setCookie(...cookies)
+		}
 	}
 	await page.goto(url, pageargs);
 
 	// wait secs if given
 	if (wait && wait>0) { await sleep(wait*1000); }
 
-	// clear timeout, get hamtl and save cokkies
+	// clear timeout, get html/dom and save cookies
 	clearTimeout(myTimeout);
 	const html = await page.content();
 	if (cookieto) {
 		var cookies = await page.cookies();
-		// ignore errors on save
-		try { fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
+		try { // ignore errors on save
+			fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
 		} catch (ignore) {  }
 	}
 	browser.close();
 
-	// create dir if requested
+	// create dir for file if requested
 	if (mkdir && file && file.includes('/')) {
 		var dir=path.dirname(file);
 		try {
@@ -222,7 +221,7 @@ if ( ! isURL(url) ) { // not url
 	}
 
 	// output to file
-	if (file) {
+	if (file && file != '-') {
 		try { 
 			fs.writeFileSync(file, html);
 		} catch (err) {
