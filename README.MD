@@ -4,7 +4,7 @@
 
  Save the file `curl.js` to a directory and install puppeteer: 
 
-	npm install https://github.com/GoogleChrome/puppeteer/
+	npm install puppeteer
 
  Makeing `curl.js` executeable on Linux/Unix/BSD system allow run it without typing node everytime.
 

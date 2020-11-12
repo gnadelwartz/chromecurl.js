@@ -16,7 +16,7 @@ const puppeteer = require('puppeteer');
 const usage="usage: "+process.argv[1].replace(/.*\//,'')+" [--wait s] [--maxtime s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
 
 const help=['', process.argv[1].replace(/.*\//,'')+
-	' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of dynamic web pages composed with javascript.', '',
+	' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.', '',
 	usage, '',
 	'	--wait <s> - wait seconds to finally render page between load and output',
 	'	-m|--max-time seconds - timeout, default 30s',
