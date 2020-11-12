@@ -34,6 +34,7 @@
 		-b|--cookie <file> - raed cookies from file
 		-c|--cookie--jar <file> - write cookies to file
 		-s|--silent - no error messages etc.
+		--no-proxypass <no-proxy-list> - comma seperated domain/ip list
 
 		--chromearg - add chromium command line arg (curl.js only), see
 				https://peter.sh/experiments/chromium-command-line-switches/

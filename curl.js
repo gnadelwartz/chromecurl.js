@@ -29,6 +29,7 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	-b|--cookie <file> - raed cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
+	'	--no-proxypass <no-proxy-list> - comma seperated domain/ip list',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -125,6 +126,10 @@ for (i=2; i<process.argv.length; i++) {
 
 		case  !['-s','--silent'].indexOf(arg):
 			console.error = function(){};
+			continue;
+
+		case '--noproxy-pass' ==arg: // conver xxx.com to xxx.com,*.xxx.com
+			pupargs.args.push('--proy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
 			continue;
 
 		case '--chromearg' ==arg:
