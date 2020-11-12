@@ -29,7 +29,7 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	-b|--cookie <file> - raed cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
-	'	--no-proxypass <no-proxy-list> - comma seperated domain/ip list',
+	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -128,8 +128,8 @@ for (i=2; i<process.argv.length; i++) {
 			console.error = function(){};
 			continue;
 
-		case '--noproxy-pass' ==arg: // conver xxx.com to xxx.com,*.xxx.com
-			pupargs.args.push('--proy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
+		case '--noproxy' ==arg: // conver xxx.com to xxx.com,*.xxx.com
+			pupargs.args.push('--proxy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
 			continue;
 
 		case '--chromearg' ==arg:
@@ -149,7 +149,7 @@ for (i=2; i<process.argv.length; i++) {
 		case  !['--hostpubmd5','--interface','--stderr--header','-H', '-d',
 			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump-header','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
-			'--noproxy--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
+			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg): 
 			i++;
 		// ignore unknpwn options
