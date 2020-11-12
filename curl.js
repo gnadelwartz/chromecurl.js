@@ -25,7 +25,10 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	-e|--referer <URL>',
 	'	-k|--insecure - allow insecure SSL connections',
 	'	-o|--output <file> - write html to file',
-	'	--create-dirs - create path to file named by -o','',
+	'	--create-dirs - create path to file named by -o',
+	'	-b|--cookie <file> - raed cookies from file',
+	'	-c|--cookie--jar <file> - raed cookies from file',
+	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
 	''
@@ -50,7 +53,7 @@ var pageargs={ waitUntil: 'load' };
 
 var timeout=30000;
 var wait=0;
-var url, file, mkdir;
+var url, file, mkdir, cookiefrom, cookieto;
 
 
 // parse arguments in curl style -------------
@@ -110,6 +113,14 @@ for (i=2; i<process.argv.length; i++) {
 		case '--create-dirs'==arg:
 			mkdir=true;
 			continue;
+	
+		case  !['-b','--cookie'].indexOf(arg):
+			cookiefrom=process.argv[++i];
+			continue;
+
+		case  !['-c','--cookie-jar'].indexOf(arg):
+			cookieto=process.argv[++i];
+			continue;
 
 		case '--chromearg' ==arg:
 			pupargs.args.push(process.argv[++i]);
@@ -125,7 +136,7 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--key'): 
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
-		case  !['--hostpubmd5','--interface','--stderr--header','-H', '-b','--cookie','-c','--cookie-jar','-d',
+		case  !['--hostpubmd5','--interface','--stderr--header','-H', '-d',
 			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump_header','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--noproxy--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
@@ -167,14 +178,29 @@ if ( ! isURL(url) ) { // not url
 	
 	// goto page, wait until loaded
 	const page = await browser.newPage();
+	if (cookiefrom) {
+		// ignore errors on save
+		try { 
+		var cookies = JSON.parse(fs.readFileSync(cookiefrom));
+		} catch (ignore) {  }
+	}
+	if (cookiefrom && cookies) {
+		await page.setCookie(...cookies)
+	}
 	await page.goto(url, pageargs);
 
 	// wait secs if given
 	if (wait && wait>0) { await sleep(wait*1000); }
 
-	// get html 
-	const html = await page.content();
+	// clear timeout, get hamtl and save cokkies
 	clearTimeout(myTimeout);
+	const html = await page.content();
+	if (cookieto) {
+		var cookies = await page.cookies();
+		// ignore errors on save
+		try { fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
+		} catch (ignore) {  }
+	}
 	browser.close();
 
 	// create dir if requested
