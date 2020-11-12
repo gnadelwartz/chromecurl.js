@@ -28,6 +28,7 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	--create-dirs - create path to file named by -o',
 	'	-b|--cookie <file> - raed cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
+	'	-s|--silent - no error messages etc',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -70,15 +71,15 @@ for (i=2; i<process.argv.length; i++) {
 
 		case '--wait'==arg: // timeout in seconds
 			wait=process.argv[++i]
-			if ( ! /^\d+$/.test(wait) ) { // not integer
-				console.error("wait is not a integer: %s", wait); return 3;
+			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
+				console.error("wait is not a number: %s", wait); return 3;
 			}
 			continue;
 
 		case !['-m','--max-time','--connect-timeout'].indexOf(arg): // timeout in seconds
 			timeout=process.argv[++i]
-			if ( ! /^\d+$/.test(timeout) ) { // not integer
-				console.error("timeout is not a integer: %s", timeout); return 3;
+			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
+				console.error("timeout is not a number: %s", timeout); return 3;
 			}
 			continue;
 
@@ -122,6 +123,10 @@ for (i=2; i<process.argv.length; i++) {
 			cookieto=process.argv[++i];
 			continue;
 
+		case  !['-s','--silent'].indexOf(arg):
+			console.error = function(){};
+			continue;
+
 		case '--chromearg' ==arg:
 			pupargs.args.push(process.argv[++i]);
 			continue;
@@ -137,7 +142,7 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
 		case  !['--hostpubmd5','--interface','--stderr--header','-H', '-d',
-			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump_header','--engine',
+			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump-header','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--noproxy--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg): 
