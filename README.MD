@@ -1,19 +1,21 @@
-# curl.js - a simple wrapper for puppeteer supporting some curl options
+## curl.js - a simple wrapper for puppeteer, supporting some curl options
 
-##  About
+###  About
 
- Save the file curl.js to a directory and install puppeteer: 
+ Save the file `curl.js` to a directory and install puppeteer: 
 
- npm install https://github.com/GoogleChrome/puppeteer/
+	npm install https://github.com/GoogleChrome/puppeteer/
 
- Makeing curl.js executeable on Linux/Unix/BSD system allow run it without typing node everytime.
+ Makeing `curl.js` executeable on Linux/Unix/BSD system allow run it without typing node everytime.
 
  (c) 2020 gnadelwartz kay@rrr.de
- released to the public domain where applicable. Otherwise, it is released under the terms of the WTFPLv2
 
-## Usage
+ released to the public domain where applicable.
+ Otherwise, it is released under the terms of the WTFPLv2
 
- [node] curl.js [--wait s] [--maxtime s] [--proxy|--socks[45] host[:port]] [curl_opt] URL
+### Usage
+
+ 	[node] curl.js [--wait s] [--maxtime s] [--proxy|--socks[45] host[:port]] [curl_opt] URL
 
 	curl.js is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.
 
@@ -26,10 +28,10 @@
 		-o|--output <file> - write html to file
 		--create-dirs - create path to file named by -o
 
-	other curl otions are not implemented and simply ignored. Thus you can only use GET requestst, PUSH and data/form
-	is currently not supported. FTP will never supported.
+ other curl otions are not implemented and simply ignored. Thus you can only use GET requestst, PUSH and data/form
+ is currently not supported. FTP will never supported.
 
-## default values
+### default values
 
 ```javascript
   var pupargs={
