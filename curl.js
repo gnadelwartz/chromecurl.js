@@ -203,7 +203,7 @@ if ( ! isURL(url) ) { // not url
 	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
 
 	// clear timeout, get html/dom and save cookies
-	clearTimeout(mytimeout);
+	if (mytimeout) { clearTimeout(mytimeout); }
 	if (file != "/dev/null") { html = await page.content(); }
 	if (cookieto) {
 		var cookies = await page.cookies();
