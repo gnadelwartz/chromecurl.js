@@ -30,6 +30,7 @@ const help=['', process.argv[1].replace(/.*\//,'')+
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
+	'	-w|--write-out %{url_effective} - write out final URL',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -56,14 +57,14 @@ var pageargs={ waitUntil: 'load' };
 var timeout=30000;
 var wait=0;
 var file='-';
-var url, mkdir, html, mytimeout,  cookiefrom, cookieto;
+var url, mkdir, html, mytimeout,  cookiefrom, cookieto, writeout;
 
 
 // parse arguments in curl style -------------
 for (i=2; i<process.argv.length; i++) {
 	arg=process.argv[i];
 	switch(true) {
-		case !['-h','--help'].indexOf(arg):
+		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
 			return;
 
@@ -78,7 +79,7 @@ for (i=2; i<process.argv.length; i++) {
 			}
 			continue;
 
-		case !['-m','--max-time','--connect-timeout'].indexOf(arg): // timeout in seconds
+		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
 			timeout=process.argv[++i]
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); return 3;
@@ -95,21 +96,21 @@ for (i=2; i<process.argv.length; i++) {
 			pupargs.args.push('--proxy-server=http://'+process.argv[++i]);
 			continue;
 
-		case !['-A','--user-agent'].indexOf(arg): // UA
+		case ['-A','--user-agent'].indexOf(arg) >=0: // UA
 			pupargs.args.push('--user-agent='+process.argv[++i]);
 			continue;
 
-		case !['-e','--referer'].indexOf(arg): // referer
+		case ['-e','--referer'].indexOf(arg) >=0: // referer
 			var referer=process.argv[++i]; // must start with http
 			if ( ! /^https*:\/\//.test(url) ) { referer="http://"+referer; }
 			pageargs['referer']=referer;
 			continue;
 
-		case !['-k','--insecure'].indexOf(arg): // ignore cert not valid, e.g. self signed
+		case ['-k','--insecure'].indexOf(arg) >=0: // ignore cert not valid, e.g. self signed
 			pupargs.args.push('--ignore-certificate-errros');
 			continue;
 
-		case !['-o','--output'].indexOf(arg): // output to file
+		case ['-o','--output'].indexOf(arg) >=0: // output to file
 			file=process.argv[++i];
 			continue;
 
@@ -117,20 +118,25 @@ for (i=2; i<process.argv.length; i++) {
 			mkdir=true;
 			continue;
 	
-		case  !['-b','--cookie'].indexOf(arg):
+		case  ['-b','--cookie'].indexOf(arg) >=0:
 			cookiefrom=process.argv[++i];
 			continue;
 
-		case  !['-c','--cookie-jar'].indexOf(arg):
+		case  ['-c','--cookie-jar'].indexOf(arg) >=0:
 			cookieto=process.argv[++i];
 			continue;
 
-		case  !['-s','--silent'].indexOf(arg):
+		case  ['-s','--silent'].indexOf(arg) >=0:
 			console.error = function(){};
 			continue;
 
 		case '--noproxy' ==arg: // conver xxx.com to xxx.com,*.xxx.com
 			pupargs.args.push('--proxy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
+			continue;
+
+		case  ['-w','--write-out'].indexOf(arg) >=0:
+			writeout=process.argv[++i];
+			if (!writeout.includes("%{url_effective}")) { console.error("Option --writeout supports %{url_effeticve} only: %s", writeout); }
 			continue;
 
 		case '--chromearg' ==arg:
@@ -147,11 +153,11 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--key'): 
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
-		case  !['--hostpubmd5','--interface','--stderr--header','-H', '-d',
+		case  ['--hostpubmd5','--interface','--stderr--header','-H', '-d',
 			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump-header','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
-			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg): 
+			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
 			i++;
 		// ignore unknpwn options
 		case arg.startsWith("-"):
@@ -226,7 +232,7 @@ if ( ! isURL(url) ) { // not url
 		}
 	}
 
-	// output to file
+	// output html, - = stdout
 	if (html) {
 	    if (file != '-') {
 		try { 
@@ -238,6 +244,10 @@ if ( ! isURL(url) ) { // not url
 	    } else {
 		console.log(html);
 	    }
+	}
+	// writeout final URL with -w
+	if (writeout) {
+		console.log(writeout.replace("%{url_effective}", await page.url()));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
