@@ -1,6 +1,6 @@
 ## curl.js - a simple wrapper for puppeteer, supporting some curl options
 
-###  About
+###  Getting Started
 
  Save the file `curl.js` to a directory and install puppeteer: 
 

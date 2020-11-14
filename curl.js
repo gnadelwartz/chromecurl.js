@@ -2,7 +2,7 @@
 //
 // curl.js - a simple wrapper for puppeteer supporting some curl options
 //
-// npm install https://github.com/GoogleChrome/puppeteer/
+// npm install puppeteer
 // usage: node curl.js URL
 //
 // (c) 2020 gnadelwartz kay@rrr.de
@@ -55,7 +55,8 @@ var pageargs={ waitUntil: 'load' };
 
 var timeout=30000;
 var wait=0;
-var url, file, mkdir, cookiefrom, cookieto;
+var file='-';
+var url, mkdir, html, myTimeout,  cookiefrom, cookieto;
 
 
 // parse arguments in curl style -------------
@@ -199,11 +200,11 @@ if ( ! isURL(url) ) { // not url
 	await page.goto(url, pageargs);
 
 	// wait secs if given
-	if (wait && wait>0) { await sleep(wait*1000); }
+	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
 
 	// clear timeout, get html/dom and save cookies
 	clearTimeout(myTimeout);
-	const html = await page.content();
+	if (file != "/dev/null") { html = await page.content(); }
 	if (cookieto) {
 		var cookies = await page.cookies();
 		try { // ignore errors on save
@@ -213,7 +214,7 @@ if ( ! isURL(url) ) { // not url
 	browser.close();
 
 	// create dir for file if requested
-	if (mkdir && file && file.includes('/')) {
+	if (mkdir && file.includes('/')) {
 		var dir=path.dirname(file);
 		try {
 			if (! fs.existsSync(dir)) {
@@ -226,15 +227,17 @@ if ( ! isURL(url) ) { // not url
 	}
 
 	// output to file
-	if (file && file != '-') {
+	if (html) {
+	    if (file != '-') {
 		try { 
 			fs.writeFileSync(file, html);
 		} catch (err) {
 			console.error("cannot write to file %s: %s", file, err);
 			return 3;
 		} 
-	} else {
+	    } else {
 		console.log(html);
+	    }
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
