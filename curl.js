@@ -56,7 +56,7 @@ var pageargs={ waitUntil: 'load' };
 var timeout=30000;
 var wait=0;
 var file='-';
-var url, mkdir, html, myTimeout,  cookiefrom, cookieto;
+var url, mkdir, html, mytimeout,  cookiefrom, cookieto;
 
 
 // parse arguments in curl style -------------
@@ -181,7 +181,7 @@ if ( ! isURL(url) ) { // not url
 	const browser = await puppeteer.launch(pupargs);
 	// timeout secs if given
 	if (timeout && timeout>0) {
-		myTimeout = setTimeout( function() {
+		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
 				browser.close(); return 2;
   			}, timeout*1000
@@ -203,7 +203,7 @@ if ( ! isURL(url) ) { // not url
 	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
 
 	// clear timeout, get html/dom and save cookies
-	clearTimeout(myTimeout);
+	clearTimeout(mytimeout);
 	if (file != "/dev/null") { html = await page.content(); }
 	if (cookieto) {
 		var cookies = await page.cookies();
