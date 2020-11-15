@@ -57,7 +57,7 @@ var pageargs={ waitUntil: 'load' };
 var timeout=30000;
 var wait=0;
 var file='-';
-var url, mkdir, html, mytimeout,  cookiefrom, cookieto, writeout;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout;
 
 
 // parse arguments in curl style -------------
@@ -97,7 +97,7 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case ['-A','--user-agent'].indexOf(arg) >=0: // UA
-			pupargs.args.push('--user-agent='+process.argv[++i]);
+			useragent=process.argv[++i];
 			continue;
 
 		case ['-e','--referer'].indexOf(arg) >=0: // referer
@@ -193,8 +193,13 @@ if ( ! isURL(url) ) { // not url
   			}, timeout*1000
 		);}
 	
-	// goto page, load cookies, wait until page loaded
+	// goto page, set UA, load cookies, wait until page loaded
 	const page = await browser.newPage();
+	if (!useragent) {
+		// remove headless from default UA
+		useragent=(await browser.userAgent()).replace(/headless/gi,'');
+	}
+	page.setUserAgent(useragent);
 	if (cookiefrom) {
 		try { // ignore errors on save
 		var cookies = JSON.parse(fs.readFileSync(cookiefrom));
