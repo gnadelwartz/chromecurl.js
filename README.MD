@@ -46,6 +46,8 @@
 
  Note: `curl.js` always follows redirects, like curl with `-L|--location`. If you want to see/trace redirects, you must use curl.
 
+ Note2: Cookie file read or written by `curl.js` uses JSON format and is not compatible with curl Netscape cookie format.
+
 ### default values
 
 ```javascript
