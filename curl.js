@@ -13,11 +13,11 @@ const path = require('path')
 const puppeteer = require('puppeteer');
 
 // default values ----------------------------
-const usage="usage: "+process.argv[1].replace(/.*\//,'')+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const IAM=process.argv[1].replace(/.*\//,'');
+const usage="usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
 
-const help=['', process.argv[1].replace(/.*\//,'')+
-	' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.', '',
-	usage, '',
+const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
+	'', usage, '',
 	'	--wait <s> - wait seconds to finally render page between load and output',
 	'	-m|--max-time seconds - timeout, default 30s (curl.js only)',
 	'	--proxy|--socks4|--socks5 <host[:port]>',
@@ -81,7 +81,7 @@ for (i=2; i<process.argv.length; i++) {
 			url=process.argv[++i];
 			continue;
 
-		case '--wait'==arg: // timeout in seconds
+		case '--wait'==arg: // wait extra  seconds
 			wait=process.argv[++i]
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
 				console.error("wait is not a number: %s", wait); return 3;
@@ -194,9 +194,9 @@ if ( ! isURL(url) ) { // not url
 // run puppeter ---------------
 (async () => {
     try {
-	// start browser
 	const browser = await puppeteer.launch(pupargs);
-	// timeout secs if given
+	const page = await browser.newPage();
+	// setup timeout 
 	if (timeout && timeout>0) {
 		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
@@ -204,8 +204,6 @@ if ( ! isURL(url) ) { // not url
   			}, timeout*1000
 		);}
 	
-	// goto page
-	const page = await browser.newPage();
 	// set UA
 	if (!useragent) {
 		// remove headless from default UA
@@ -227,7 +225,7 @@ if ( ! isURL(url) ) { // not url
 			}
 		} catch (ignore) {  }
 	}
-	// wait for page loaded
+	// goto url wait for page loaded
 	await page.goto(url, pageargs);
 
 	// additional wait for final page composing
