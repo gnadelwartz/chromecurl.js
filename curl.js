@@ -201,12 +201,18 @@ if ( ! isURL(url) ) { // not url
 	}
 	page.setUserAgent(useragent);
 	if (cookiefrom) {
-		try { // ignore errors on save
-		var cookies = JSON.parse(fs.readFileSync(cookiefrom));
+		try { // ignore errors on cookie load
+			var text = fs.readFileSync(cookiefrom, 'utf-8');
+			// convert from curl/wget to JSON
+			var cookies=curl2cookies(text);
+			if (!cookies) {
+				cookies = JSON.parse(text); // seems to be JSON already
+			}
+			// set browser cookies
+			if (cookies) {
+				await page.setCookie(...cookies)
+			}
 		} catch (ignore) {  }
-		if (cookies) {
-			await page.setCookie(...cookies)
-		}
 	}
 	await page.goto(url, pageargs);
 
@@ -281,29 +287,27 @@ function sleep(ms) {
 // converts a sting containing netscape cookies to an Array
 // retrun false if curl or wget signature is not detected
 function curl2cookies(text) {
-	
 	// split text into lines
 	var cookies = [];
 	var lines = text.split("\n");
 
+	// not a curl/wget cookie file
 	if (! lines[0].toLowerCase().includes("http cookie file")) { return false; }
  
 	// iterate over lines
 	lines.forEach(function(line, index){
-		// split lines imto values
-		var tokens = line.split("\t");
+		// split lines into tokens
+		var tokens = line.split("\t").map(function(e){return e.trim();});
+		var cookie = {};
  
-		// we only care for valid cookie def lines
+		// a valid cookie line must have 7 tokens
 		if (tokens.length == 7) {
-			// trim the tokens
-			tokens = tokens.map(function(e){return e.trim();});
-			var cookie = {};
-			cookie.httpOnly = 'false'; 
-			// Extract the data
-			cookie.domain = tokens[0];
 			if (tokens[0].startsWith("#HttpOnly_")) {
 				cookie.domain = tokens[0].replace("#HttpOnly_", '')
-				cookie.httpOnly = 'true'; 
+				cookie.httpOnly = true; 
+			} else {
+				cookie.domain = tokens[0];
+				cookie.httpOnly = false; 
 			}
 			cookie.flag = tokens[1] === 'TRUE';
 			cookie.path = tokens[2];
