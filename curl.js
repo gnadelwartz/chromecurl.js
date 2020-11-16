@@ -60,13 +60,22 @@ var file='-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout;
 
 
-// parse arguments in curl style -------------
+// parse arguments -------------
 for (i=2; i<process.argv.length; i++) {
-	arg=process.argv[i];
+    // split multiple single args -abc -> [-a, -b, -c ]
+    var opt=[process.argv[i]];
+    if (/^-[^-]./i.test(opt)) {
+	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el});
+    }
+    // iterate over final args
+    for (arg of opt) {
 	switch(true) {
 		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
 			return;
+
+		case '-L' ==arg: // follow redirect always active
+			continue;
 
 		case '--url'==arg:
 			url=process.argv[++i];
@@ -167,6 +176,7 @@ for (i=2; i<process.argv.length; i++) {
 
 		// not an option = url
 		url=arg;
+     }
 } 
 
 // check url -----------------
@@ -184,6 +194,7 @@ if ( ! isURL(url) ) { // not url
 // run puppeter ---------------
 (async () => {
     try {
+	// start browser
 	const browser = await puppeteer.launch(pupargs);
 	// timeout secs if given
 	if (timeout && timeout>0) {
@@ -193,13 +204,15 @@ if ( ! isURL(url) ) { // not url
   			}, timeout*1000
 		);}
 	
-	// goto page, set UA, load cookies, wait until page loaded
+	// goto page
 	const page = await browser.newPage();
+	// set UA
 	if (!useragent) {
 		// remove headless from default UA
 		useragent=(await browser.userAgent()).replace(/headless/gi,'');
 	}
 	page.setUserAgent(useragent);
+	//set cookies
 	if (cookiefrom) {
 		try { // ignore errors on cookie load
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
@@ -214,23 +227,27 @@ if ( ! isURL(url) ) { // not url
 			}
 		} catch (ignore) {  }
 	}
+	// wait for page loaded
 	await page.goto(url, pageargs);
 
-	// wait secs if given
+	// additional wait for final page composing
 	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
-
-	// clear timeout, get html/dom and save cookies
+	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
+
+	// get page HMTL
 	if (file != "/dev/null") { html = await page.content(); }
+	// save cookies
 	if (cookieto) {
 		var cookies = await page.cookies();
 		try { // ignore errors on save
 			fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
 		} catch (ignore) {  }
 	}
+	// close browser
 	browser.close();
 
-	// create dir for file if requested
+	// create out dir if requested
 	if (mkdir && file.includes('/')) {
 		var dir=path.dirname(file);
 		try {
@@ -238,6 +255,7 @@ if ( ! isURL(url) ) { // not url
 				fs.mkdirSync(dir, { recursive: true });
 			}	 
 		} catch (err) {
+			// exit if out dir can't created
 			console.error("cannot cannot create path %s: %s", dir, err);
 			return 3;
 		}
@@ -246,17 +264,17 @@ if ( ! isURL(url) ) { // not url
 	// output html, - = stdout
 	if (html) {
 	    if (file != '-') {
-		try { 
+		try { // to file
 			fs.writeFileSync(file, html);
 		} catch (err) {
 			console.error("cannot write to file %s: %s", file, err);
 			return 3;
 		} 
-	    } else {
+	    } else { // to STDOUT
 		console.log(html);
 	    }
 	}
-	// writeout final URL with -w
+	// write final URL with -w
 	if (writeout) {
 		console.log(writeout.replace("%{url_effective}", await page.url()));
 	}
