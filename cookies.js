@@ -1,49 +1,49 @@
 #!/usr/bin/env node
 //
-// cookies.js - a javascript to convert curl/wget/netscape cookies file to JSON
-//
-// usage: node cookies.js <curl-coookie-file>
-//
-// (c) 2020 gnadelwartz kay@rrr.de
-// released to the public domain where applicable. Otherwise, it is released under the terms of the WTFPLv2
+// cookies.js - convert Netscape/Curl/Wget coookies to JSON
 //
 const fs = require('fs')
-
 const file=process.argv[2];
+
 if (file) {
 	var text = fs.readFileSync(file, 'utf-8');
-	console.log(JSON.stringify(curl2cookies(text),0,2));
+	var cookies=curl2cookies(text);
+	if (cookies) {
+		console.log(JSON.stringify(cookies,0,2));
+	} else {
+		console.error("Not a curl/wget/netscpae cookie file: %s", file);
+		process.exit(1);
+	}
 } else {
-	console.error("Missing filename ...")
+	console.error("Missing filename, usage: [node] cookies.js <curl-wget-cookie-file>")
+	process.exit(2);
 }
 
 
 // converts a sting containing netscape cookies to an Array
 // retrun false if curl or wget signature is not detected
 function curl2cookies(text) {
-	
 	// split text into lines
 	var cookies = [];
 	var lines = text.split("\n");
 
+	// not a curl/wget cookie file
 	if (! lines[0].toLowerCase().includes("http cookie file")) { return false; }
  
 	// iterate over lines
 	lines.forEach(function(line, index){
-		// split lines imto values
-		var tokens = line.split("\t");
+		// split lines into tokens
+		var tokens = line.split("\t").map(function(e){return e.trim();});
+		var cookie = {};
  
-		// we only care for valid cookie def lines
+		// a valid cookie line must have 7 tokens
 		if (tokens.length == 7) {
-			// trim the tokens
-			tokens = tokens.map(function(e){return e.trim();});
-			var cookie = {};
-			cookie.httpOnly = 'false'; 
-			// Extract the data
-			cookie.domain = tokens[0];
 			if (tokens[0].startsWith("#HttpOnly_")) {
 				cookie.domain = tokens[0].replace("#HttpOnly_", '')
-				cookie.httpOnly = 'true'; 
+				cookie.httpOnly = true; 
+			} else {
+				cookie.domain = tokens[0];
+				cookie.httpOnly = false; 
 			}
 			cookie.flag = tokens[1] === 'TRUE';
 			cookie.path = tokens[2];

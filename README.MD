@@ -73,3 +73,9 @@
   var timeout=30000;
   var wait=0;
 ```
+
+### Convert Cookies
+
+`cookies.js` converts Netscape/Curl/Wget cookies file from Netscape to JSON format an output to STDOUT.
+
+	usage: node cookies.js <curl-wget-cookie-file> 
