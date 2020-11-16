@@ -47,7 +47,7 @@
  Note: `curl.js` always follows redirects, like curl with `-L|--location`. If you want to see/trace redirects, you must use curl.
 
  Note2: Cookie file written by `curl.js -c|--cookie-jar` uses JSON format and is not compatible Netscape cookie format.
- `curl -b|cookie` can read both Netscape/Curl/Wget and JSON format.
+ `curl -b|--cookie` can read both Netscape/Curl/Wget and JSON format.
  
 
 
@@ -79,6 +79,6 @@
 
 ### Convert Cookies
 
-`cookies.js` converts Netscape/Curl/Wget cookies file from Netscape to JSON format an output to STDOUT.
+`cookies.js` converts Netscape/Curl/Wget cookies file from Netscape to JSON format and output to STDOUT.
 
 	usage: node cookies.js <curl-wget-cookie-file> 
