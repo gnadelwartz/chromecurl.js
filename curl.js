@@ -72,7 +72,7 @@ for (i=2; i<process.argv.length; i++) {
 	switch(true) {
 		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
-			return;
+			process.exit(0);
 
 		case '-L' ==arg: // follow redirect always active
 			continue;
@@ -84,14 +84,14 @@ for (i=2; i<process.argv.length; i++) {
 		case '--wait'==arg: // wait extra  seconds
 			wait=process.argv[++i]
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
-				console.error("wait is not a number: %s", wait); return 3;
+				console.error("wait is not a number: %s", wait); process.exit(3);
 			}
 			continue;
 
 		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
 			timeout=process.argv[++i]
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
-				console.error("timeout is not a number: %s", timeout); return 3;
+				console.error("timeout is not a number: %s", timeout); process.exit(3);
 			}
 			continue;
 
@@ -181,13 +181,13 @@ for (i=2; i<process.argv.length; i++) {
 
 // check url -----------------
 if (!url) { // empty
-	console.error("you must at least specify an URL\n"+usage); return 1;
+	console.error("you must at least specify an URL\n"+usage); process.exit(1);
 }
 if ( ! /^https*:\/\//.test(url) ) { //add missing http
 	url="http://"+url;
 }
 if ( ! isURL(url) ) { // not url
-	console.error("not a valid URL : %s", url); return 1;
+	console.error("not a valid URL : %s", url); process.exit(1);
 }
 
 
@@ -200,7 +200,7 @@ if ( ! isURL(url) ) { // not url
 	if (timeout && timeout>0) {
 		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
-				browser.close(); return 2;
+				browser.close(); process.exit(2);
   			}, timeout*1000
 		);}
 	
@@ -255,7 +255,7 @@ if ( ! isURL(url) ) { // not url
 		} catch (err) {
 			// exit if out dir can't created
 			console.error("cannot cannot create path %s: %s", dir, err);
-			return 3;
+			process.exit(3);
 		}
 	}
 
@@ -266,7 +266,7 @@ if ( ! isURL(url) ) { // not url
 			fs.writeFileSync(file, html);
 		} catch (err) {
 			console.error("cannot write to file %s: %s", file, err);
-			return 3;
+			process.exit(3);
 		} 
 	    } else { // to STDOUT
 		console.log(html);
@@ -301,7 +301,7 @@ function sleep(ms) {
 }
 
 // converts a sting containing netscape cookies to an Array
-// retrun false if curl or wget signature is not detected
+// return false if curl or wget signature is not detected
 function curl2cookies(text) {
 	// split text into lines
 	var cookies = [];
