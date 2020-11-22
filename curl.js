@@ -33,6 +33,8 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	'	-w|--write-out %{url_effective} - write out final URL',
 	'	-L - follow redirects, always on',
 	'	--compressed - allowd compressed data transfer, always on',
+	'	-i|--include - include headers in output',
+	'	-D|--dump-header - dump headers to file',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -59,8 +61,12 @@ var pageargs={ waitUntil: 'load' };
 var timeout=30000;
 var wait=0;
 var file='-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders;
 
+const fakeredir= ['HTTP/1.1 301 Moved Permanently',
+		'Server: Server',
+		'Content-Type: text/html',
+		'Connection: keep-alive', '' ].join("\n");
 
 // parse arguments -------------
 for (i=2; i<process.argv.length; i++) {
@@ -151,6 +157,14 @@ for (i=2; i<process.argv.length; i++) {
 			if (!writeout.includes("%{url_effective}")) { console.error("Option --writeout supports %{url_effeticve} only: %s", writeout); }
 			continue;
 
+		case  ['-i','--include'].indexOf(arg) >=0: // output headers also
+			incheaders=true;
+			continue;
+
+		case ['-D','--dump-header'].indexOf(arg) >=0: // output to file
+			dumpheaders=process.argv[++i];
+			continue;
+
 		case '--chromearg' ==arg:
 			pupargs.args.push(process.argv[++i]);
 			continue;
@@ -166,7 +180,7 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
 		case  ['--hostpubmd5','--interface','--stderr--header','-H', '-d',
-			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump-header','--engine',
+			'--chipers','--continue-at,','-C', '--crlfile','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
@@ -229,7 +243,26 @@ if ( ! isURL(url) ) { // not url
 		} catch (ignore) {  }
 	}
 	// goto url wait for page loaded
-	await page.goto(url, pageargs);
+	var response = await page.goto(url, pageargs);
+	const finalurl=await page.url();
+
+	// save headers for output
+	var headers="";;
+	if (incheaders || dumpheaders) {
+		var tmpheaders=response.headers();
+		// get HTTP protocol version
+		var httpversion = await page.evaluate(() => performance.getEntries()[0].nextHopProtocol);
+		httpversion = httpversion.toUpperCase();
+		if (httpversion == 'H2') { httpversion="HTTP/2"; }
+		// add fake redirection
+		if (url != finalurl && finalurl != url+'/') {
+			headers=fakeredir+ "Date: "+tmpheaders["date"]+"\n"+ "Location: "+finalurl+"\n\n";
+		}
+		headers+=httpversion+" "+response.status() +" "+response.statusText() +"\n";
+		for (header in tmpheaders) {
+			headers+= header +': '+ tmpheaders[header] +"\n";
+		}	
+	}
 
 	// additional wait for final page composing
 	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
@@ -264,6 +297,8 @@ if ( ! isURL(url) ) { // not url
 
 	// output html, - = stdout
 	if (html) {
+	    // output also headers
+	    if (incheaders) { html=headers+"\n"+html }
 	    if (file != '-') {
 		try { // to file
 			fs.writeFileSync(file, html);
@@ -275,9 +310,22 @@ if ( ! isURL(url) ) { // not url
 		console.log(html);
 	    }
 	}
+	// dump headers to file
+	if (dumpheaders) {
+	    if (dumpheaders != '-') {
+		try { // to file
+			fs.writeFileSync(dumpheaders, headers);
+		} catch (err) {
+			console.error("cannot write headers to file %s: %s", dumpheaders, err);
+			process.exit(4);
+		} 
+	    } else { // to STDOUT
+		console.log(headers);
+	    }
+	}
 	// write final URL with -w
 	if (writeout) {
-		console.log(writeout.replace("%{url_effective}", await page.url()));
+		console.log(writeout.replace("%{url_effective}", finalurl));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
