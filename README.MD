@@ -35,7 +35,7 @@
 		-c|--cookie--jar <file> - write cookies to file
 		-s|--silent - no error messages etc.
 		--noproxy <no-proxy-list> - comma seperated domain/ip list
-		-w|--write-out %{url_effective} - write out final URL
+		-w|--write-out %{url_effective}|%{http_code} - final URL and or response code'
 		-L - follow redirects, always on
 		--compressed - allowd compressed data transfer, always on
 		-i|--include - include headers in output

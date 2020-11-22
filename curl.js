@@ -30,7 +30,7 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
-	'	-w|--write-out %{url_effective} - write out final URL',
+	'	-w|--write-out %{url_effective}|%{http_code} - final URL and or response code',
 	'	-L - follow redirects, always on',
 	'	--compressed - allowd compressed data transfer, always on',
 	'	-i|--include - include headers in output',
@@ -154,7 +154,9 @@ for (i=2; i<process.argv.length; i++) {
 
 		case  ['-w','--write-out'].indexOf(arg) >=0:
 			writeout=process.argv[++i];
-			if (!writeout.includes("%{url_effective}")) { console.error("Option --writeout supports %{url_effeticve} only: %s", writeout); }
+			if (!(writeout.includes("%{url_effective}") || writeout.includes("%{http_code}")) ) {
+				console.error("Option --writeout supports %{url_effeticve} and %{http_code} only: %s", writeout);
+			}
 			continue;
 
 		case  ['-i','--include'].indexOf(arg) >=0: // output headers also
@@ -245,6 +247,7 @@ if ( ! isURL(url) ) { // not url
 	// goto url wait for page loaded
 	var response = await page.goto(url, pageargs);
 	const finalurl=await page.url();
+	const httpcode=response.status();
 
 	// save headers for output
 	var headers="";;
@@ -258,7 +261,7 @@ if ( ! isURL(url) ) { // not url
 		if (url != finalurl && finalurl != url+'/') {
 			headers=fakeredir+ "Date: "+tmpheaders["date"]+"\n"+ "Location: "+finalurl+"\n\n";
 		}
-		headers+=httpversion+" "+response.status() +" "+response.statusText() +"\n";
+		headers+=httpversion+" "+httpcode +" "+response.statusText() +"\n";
 		for (header in tmpheaders) {
 			headers+= header +': '+ tmpheaders[header] +"\n";
 		}	
@@ -325,7 +328,7 @@ if ( ! isURL(url) ) { // not url
 	}
 	// write final URL with -w
 	if (writeout) {
-		console.log(writeout.replace("%{url_effective}", finalurl));
+		console.log(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
