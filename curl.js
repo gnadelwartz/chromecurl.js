@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 //
-// curl.js - a simple wrapper for puppeteer supporting some curl options
+// curl.js - a simple wrapper for puppeteer supporting many curl options
 //
 // npm install puppeteer
 // usage: node curl.js URL
@@ -8,8 +8,8 @@
 // (c) 2020 gnadelwartz kay@rrr.de
 // released to the public domain where applicable. Otherwise, it is released under the terms of the WTFPLv2
 //
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 const puppeteer = require('puppeteer');
 
 // default values ----------------------------
@@ -71,7 +71,7 @@ const fakeredir= ['HTTP/1.1 301 Moved Permanently',
 // parse arguments -------------
 for (i=2; i<process.argv.length; i++) {
     // split multiple single args -abc -> [-a, -b, -c ]
-    var opt=[process.argv[i]];
+    var opt = [process.argv[i]];
     if (/^-[^-]./i.test(opt)) {
 	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el});
     }
@@ -86,32 +86,32 @@ for (i=2; i<process.argv.length; i++) {
 		case '-L' ==arg: // follow redirect always active in chrome
 			continue;
 
-		case '--url'==arg:
-			url=process.argv[++i];
+		case '--url' ==arg:
+			url = process.argv[++i];
 			continue;
 
-		case '--wait'==arg: // wait extra  seconds
-			wait=process.argv[++i]
+		case '--wait' ==arg: // wait extra  seconds
+			wait = process.argv[++i]
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
 				console.error("wait is not a number: %s", wait); process.exit(3);
 			}
 			continue;
 
 		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
-			timeout=process.argv[++i]
+			timeout = process.argv[++i]
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); process.exit(3);
 			}
 			continue;
 
 		case arg.startsWith("--socks4"): // socks4 proxy
-			pupargs.args.push('--proxy-server=socks4://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=socks4://' + process.argv[++i]);
 			continue;
 		case arg.startsWith("--socks5"): // socks5 proxy
-			pupargs.args.push('--proxy-server=socks5://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=socks5://' + process.argv[++i]);
 			continue;
 		case ['-X','--proxy','--proxy1.0'].indexOf[arg]: // http proxy
-			pupargs.args.push('--proxy-server=http://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=http://' + process.argv[++i]);
 			continue;
 
 		case ['-A','--user-agent'].indexOf(arg) >=0: // UA
@@ -119,8 +119,8 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case ['-e','--referer'].indexOf(arg) >=0: // referer
-			var referer=process.argv[++i]; // must start with http
-			if ( ! /^https*:\/\//.test(url) ) { referer="http://"+referer; }
+			var referer = process.argv[++i]; // must start with http
+			if ( ! /^https*:\/\//.test(url) ) { referer = "http://" + referer; }
 			pageargs['referer']=referer;
 			continue;
 
@@ -129,19 +129,19 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case ['-o','--output'].indexOf(arg) >=0: // output to file
-			file=process.argv[++i];
+			file = process.argv[++i];
 			continue;
 
 		case '--create-dirs'==arg:
-			mkdir=true;
+			mkdir = true;
 			continue;
 	
 		case  ['-b','--cookie'].indexOf(arg) >=0:
-			cookiefrom=process.argv[++i];
+			cookiefrom = process.argv[++i];
 			continue;
 
 		case  ['-c','--cookie-jar'].indexOf(arg) >=0:
-			cookieto=process.argv[++i];
+			cookieto = process.argv[++i];
 			continue;
 
 		case  ['-s','--silent'].indexOf(arg) >=0:
@@ -149,29 +149,29 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case '--noproxy' ==arg: // conver xxx.com to xxx.com,*.xxx.com
-			pupargs.args.push('--proxy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
+			pupargs.args.push('--proxy-bypass-list=' + process.argv[++i].replace(/,/g, ';') + ';*.' + process.argv[i].replace(/,/g, ';*.'));
 			continue;
 
 		case  ['-w','--write-out'].indexOf(arg) >=0:
-			writeout=process.argv[++i];
-			if (!(writeout.includes("%{url_effective}") || writeout.includes("%{http_code}")) ) {
+			writeout = process.argv[++i];
+			if (! (writeout.includes("%{url_effective}") || writeout.includes("%{http_code}")) ) {
 				console.error("Option --writeout supports %{url_effeticve} and %{http_code} only: %s", writeout);
 			}
 			continue;
 
 		case  ['-i','--include'].indexOf(arg) >=0: // output headers also
-			incheaders=true;
+			incheaders = true;
 			continue;
 
 		case ['-D','--dump-header'].indexOf(arg) >=0: // output to file
-			dumpheaders=process.argv[++i];
+			dumpheaders = process.argv[++i];
 			continue;
 
 		case '--chromearg' ==arg:
 			pupargs.args.push(process.argv[++i]);
 			continue;
 
-		// curl options with second arg
+		// ignored curl options with second arg
 		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
 		case arg.startsWith('--cert'): 
@@ -187,23 +187,23 @@ for (i=2; i<process.argv.length; i++) {
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
 			i++;
-		// ignore unknpwn options
+		// ignore unknown options
 		case arg.startsWith("-"):
 			console.error("ignore option: %s, result may differ from curl", arg);
 			continue;
 		}
 
 		// not an option = url
-		url=arg;
+		url = arg;
      }
 } 
 
 // check url -----------------
 if (!url) { // empty
-	console.error("you must at least specify an URL\n"+usage); process.exit(1);
+	console.error("you must at least specify an URL\n%s", usage); process.exit(1);
 }
 if ( ! /^https*:\/\//.test(url) ) { //add missing http
-	url="http://"+url;
+	url = "http://"+url;
 }
 if ( ! isURL(url) ) { // not url
 	console.error("not a valid URL : %s", url); process.exit(1);
@@ -226,7 +226,7 @@ if ( ! isURL(url) ) { // not url
 	// set UA
 	if (!useragent) {
 		// remove headless from default UA
-		useragent=(await browser.userAgent()).replace(/headless/gi,'');
+		useragent = ( await browser.userAgent() ).replace(/headless/gi,'');
 	}
 	page.setUserAgent(useragent);
 	//set cookies
@@ -234,7 +234,7 @@ if ( ! isURL(url) ) { // not url
 		try { // ignore errors on cookie load
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to JSON
-			var cookies=curl2cookies(text);
+			var cookies = curl2cookies(text);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
@@ -246,23 +246,23 @@ if ( ! isURL(url) ) { // not url
 	}
 	// goto url wait for page loaded
 	var response = await page.goto(url, pageargs);
-	const finalurl=await page.url();
-	const httpcode=response.status();
+	const finalurl = await page.url();
+	const httpcode = response.status();
 
 	// save headers for output
-	var headers="";
+	var headers = "";
 	if (incheaders || dumpheaders) {
-		var tmpheaders=response.headers();
+		var tmpheaders = response.headers();
 		// get HTTP protocol version
-		var httpversion = (await page.evaluate(() => performance.getEntries()[0].nextHopProtocol)).toUpperCase();
-		if (httpversion == 'H2') { httpversion="HTTP/2"; }
+		var httpversion = ( await page.evaluate(() => performance.getEntries()[0].nextHopProtocol) ).toUpperCase();
+		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
-			headers=fakeredir+ "Date: "+tmpheaders["date"]+"\n"+ "Location: "+finalurl+"\n\n";
+			headers = fakeredir + "Date: " + tmpheaders["date"] + "\n" + "Location: " + finalurl + "\n\n";
 		}
-		headers+=httpversion+" "+httpcode +" "+response.statusText() +"\n";
+		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
 		for (header in tmpheaders) {
-			headers+= header +': '+ tmpheaders[header] +"\n";
+			headers += header + ': ' + tmpheaders[header] + "\n";
 		}	
 	}
 
@@ -285,7 +285,7 @@ if ( ! isURL(url) ) { // not url
 
 	// create out dir if requested
 	if (mkdir && file.includes('/')) {
-		var dir=path.dirname(file);
+		var dir = path.dirname(file);
 		try {
 			if (! fs.existsSync(dir)) {
 				fs.mkdirSync(dir, { recursive: true });
