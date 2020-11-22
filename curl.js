@@ -18,8 +18,8 @@ const usage="usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[
 
 const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
 	'', usage, '',
-	'	--wait <s> - wait seconds to finally render page between load and output',
-	'	-m|--max-time seconds - timeout, default 30s (curl.js only)',
+	'	--wait <s> - wait seconds between event load and output (curl.js only)',
+	'	-m|--max-time seconds - timeout, default 30s',
 	'	--proxy|--socks4|--socks5 <host[:port]>',
 	'	-A|--user-agent <agent-string>',
 	'	-e|--referer <URL>',
@@ -31,6 +31,8 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
 	'	-w|--write-out %{url_effective} - write out final URL',
+	'	-L - follow redirects, always on',
+	'	--compressed - allowd compressed data transfer, always on',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
@@ -74,7 +76,8 @@ for (i=2; i<process.argv.length; i++) {
 			console.log(help);
 			process.exit(0);
 
-		case '-L' ==arg: // follow redirect always active
+		case '--compressed' ==arg: // chrome handles this
+		case '-L' ==arg: // follow redirect always active in chrome
 			continue;
 
 		case '--url'==arg:

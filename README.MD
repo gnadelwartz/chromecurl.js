@@ -36,6 +36,8 @@
 		-s|--silent - no error messages etc.
 		--noproxy <no-proxy-list> - comma seperated domain/ip list
 		-w|--write-out %{url_effective} - write out final URL
+		-L - follow redirects, always on'
+		--compressed - allowd compressed data transfer, always on'
 
 		--chromearg - add chromium command line arg (curl.js only), see
 				https://peter.sh/experiments/chromium-command-line-switches/
