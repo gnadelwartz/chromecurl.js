@@ -32,7 +32,7 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
 	'	-w|--write-out %{url_effective}|%{http_code} - final URL and or response code',
 	'	-L - follow redirects, always on',
-	'	--compressed - allowd compressed data transfer, always on',
+	'	--compressed - allow compressed data transfer, always on',
 	'	-i|--include - include headers in output',
 	'	-D|--dump-header - dump headers to file',
 	'',
