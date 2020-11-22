@@ -250,12 +250,11 @@ if ( ! isURL(url) ) { // not url
 	const httpcode=response.status();
 
 	// save headers for output
-	var headers="";;
+	var headers="";
 	if (incheaders || dumpheaders) {
 		var tmpheaders=response.headers();
 		// get HTTP protocol version
-		var httpversion = await page.evaluate(() => performance.getEntries()[0].nextHopProtocol);
-		httpversion = httpversion.toUpperCase();
+		var httpversion = (await page.evaluate(() => performance.getEntries()[0].nextHopProtocol)).toUpperCase();
 		if (httpversion == 'H2') { httpversion="HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
