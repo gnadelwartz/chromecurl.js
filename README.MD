@@ -1,4 +1,4 @@
-## curl.js - a simple wrapper for puppeteer, supporting some curl options
+## curl.js - a simple wrapper for puppeteer, supporting many  curl options
 
 ###  Getting Started
 
