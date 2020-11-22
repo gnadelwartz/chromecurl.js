@@ -13,10 +13,10 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 
 // default values ----------------------------
-const IAM=process.argv[1].replace(/.*\//,'');
-const usage="usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const IAM = process.argv[1].replace(/.*\//,'');
+const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
 
-const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
+const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
 	'', usage, '',
 	'	--wait <s> - wait seconds between event load and output (curl.js only)',
 	'	-m|--max-time seconds - timeout, default 30s',
@@ -41,7 +41,7 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	''
 	].join("\n");
 
-var pupargs={
+var pupargs = {
 	args:[
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
@@ -56,14 +56,14 @@ var pupargs={
 	headless: true
 };
 
-var pageargs={ waitUntil: 'load' };
+var pageargs = { waitUntil: 'load' };
 
-var timeout=30000;
-var wait=0;
-var file='-';
+var timeout = 30000;
+var wait = 0;
+var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders;
 
-const fakeredir= ['HTTP/1.1 301 Moved Permanently',
+const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
 		'Content-Type: text/html',
 		'Connection: keep-alive', '' ].join("\n");

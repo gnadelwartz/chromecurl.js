@@ -58,7 +58,7 @@
 ### default values
 
 ```javascript
-  var pupargs={
+  var pupargs = {
 	args:[
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
@@ -73,12 +73,12 @@
 	headless: true
   };
 
-  var pageargs={
+  var pageargs = {
 	 waitUntil: 'load'
 	 };
 
-  var timeout=30000;
-  var wait=0;
+  var timeout = 30000;
+  var wait = 0;
 ```
 
 ### Convert Cookies
