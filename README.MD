@@ -1,4 +1,4 @@
-## curl.js - a simple wrapper for puppeteer, supporting some curl options
+## curl.js - a simple wrapper for puppeteer, supporting many  curl options
 
 ###  Getting Started
 
@@ -35,7 +35,11 @@
 		-c|--cookie--jar <file> - write cookies to file
 		-s|--silent - no error messages etc.
 		--noproxy <no-proxy-list> - comma seperated domain/ip list
-		-w|--write-out %{url_effective} - write out final URL
+		-w|--write-out %{url_effective}|%{http_code} - final URL and or response code'
+		-L - follow redirects, always on
+		--compressed - decompress zipped data transfers, always on
+		-i|--include - include headers in output
+		-D|--dump-header - dump headers to file
 
 		--chromearg - add chromium command line arg (curl.js only), see
 				https://peter.sh/experiments/chromium-command-line-switches/
@@ -54,7 +58,7 @@
 ### default values
 
 ```javascript
-  var pupargs={
+  var pupargs = {
 	args:[
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
@@ -69,12 +73,12 @@
 	headless: true
   };
 
-  var pageargs={
+  var pageargs = {
 	 waitUntil: 'load'
 	 };
 
-  var timeout=30000;
-  var wait=0;
+  var timeout = 30000;
+  var wait = 0;
 ```
 
 ### Convert Cookies

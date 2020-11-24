@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 //
-// curl.js - a simple wrapper for puppeteer supporting some curl options
+// curl.js - a simple wrapper for puppeteer supporting many curl options
 //
 // npm install puppeteer
 // usage: node curl.js URL
@@ -8,18 +8,18 @@
 // (c) 2020 gnadelwartz kay@rrr.de
 // released to the public domain where applicable. Otherwise, it is released under the terms of the WTFPLv2
 //
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 const puppeteer = require('puppeteer');
 
 // default values ----------------------------
-const IAM=process.argv[1].replace(/.*\//,'');
-const usage="usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const IAM = process.argv[1].replace(/.*\//,'');
+const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
 
-const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
+const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
 	'', usage, '',
-	'	--wait <s> - wait seconds to finally render page between load and output',
-	'	-m|--max-time seconds - timeout, default 30s (curl.js only)',
+	'	--wait <s> - wait seconds between event load and output (curl.js only)',
+	'	-m|--max-time seconds - timeout, default 30s',
 	'	--proxy|--socks4|--socks5 <host[:port]>',
 	'	-A|--user-agent <agent-string>',
 	'	-e|--referer <URL>',
@@ -30,14 +30,18 @@ const help=['', IAM+' is a simple drop in replacement for curl, using pupeteer (
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
-	'	-w|--write-out %{url_effective} - write out final URL',
+	'	-w|--write-out %{url_effective}|%{http_code} - final URL and or response code',
+	'	-L - follow redirects, always on',
+	'	--compressed - decompress zipped data transfers, always on',
+	'	-i|--include - include headers in output',
+	'	-D|--dump-header - dump headers to file',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
 	''
 	].join("\n");
 
-var pupargs={
+var pupargs = {
 	args:[
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
@@ -52,18 +56,22 @@ var pupargs={
 	headless: true
 };
 
-var pageargs={ waitUntil: 'load' };
+var pageargs = { waitUntil: 'load' };
 
-var timeout=30000;
-var wait=0;
-var file='-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout;
+var timeout = 30000;
+var wait = 0;
+var file = '-';
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders;
 
+const fakeredir = ['HTTP/1.1 301 Moved Permanently',
+		'Server: Server',
+		'Content-Type: text/html',
+		'Connection: keep-alive', '' ].join("\n");
 
 // parse arguments -------------
 for (i=2; i<process.argv.length; i++) {
     // split multiple single args -abc -> [-a, -b, -c ]
-    var opt=[process.argv[i]];
+    var opt = [process.argv[i]];
     if (/^-[^-]./i.test(opt)) {
 	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el});
     }
@@ -72,37 +80,38 @@ for (i=2; i<process.argv.length; i++) {
 	switch(true) {
 		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
-			return;
+			process.exit(0);
 
-		case '-L' ==arg: // follow redirect always active
+		case '--compressed' ==arg: // chrome handles this
+		case '-L' ==arg: // follow redirect always active in chrome
 			continue;
 
-		case '--url'==arg:
-			url=process.argv[++i];
+		case '--url' ==arg:
+			url = process.argv[++i];
 			continue;
 
-		case '--wait'==arg: // wait extra  seconds
-			wait=process.argv[++i]
+		case '--wait' ==arg: // wait extra  seconds
+			wait = process.argv[++i]
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
-				console.error("wait is not a number: %s", wait); return 3;
+				console.error("wait is not a number: %s", wait); process.exit(3);
 			}
 			continue;
 
 		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
-			timeout=process.argv[++i]
+			timeout = process.argv[++i]
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
-				console.error("timeout is not a number: %s", timeout); return 3;
+				console.error("timeout is not a number: %s", timeout); process.exit(3);
 			}
 			continue;
 
 		case arg.startsWith("--socks4"): // socks4 proxy
-			pupargs.args.push('--proxy-server=socks4://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=socks4://' + process.argv[++i]);
 			continue;
 		case arg.startsWith("--socks5"): // socks5 proxy
-			pupargs.args.push('--proxy-server=socks5://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=socks5://' + process.argv[++i]);
 			continue;
 		case ['-X','--proxy','--proxy1.0'].indexOf[arg]: // http proxy
-			pupargs.args.push('--proxy-server=http://'+process.argv[++i]);
+			pupargs.args.push('--proxy-server=http://' + process.argv[++i]);
 			continue;
 
 		case ['-A','--user-agent'].indexOf(arg) >=0: // UA
@@ -110,8 +119,8 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case ['-e','--referer'].indexOf(arg) >=0: // referer
-			var referer=process.argv[++i]; // must start with http
-			if ( ! /^https*:\/\//.test(url) ) { referer="http://"+referer; }
+			var referer = process.argv[++i]; // must start with http
+			if ( ! /^https*:\/\//.test(url) ) { referer = "http://" + referer; }
 			pageargs['referer']=referer;
 			continue;
 
@@ -120,19 +129,19 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case ['-o','--output'].indexOf(arg) >=0: // output to file
-			file=process.argv[++i];
+			file = process.argv[++i];
 			continue;
 
 		case '--create-dirs'==arg:
-			mkdir=true;
+			mkdir = true;
 			continue;
 	
 		case  ['-b','--cookie'].indexOf(arg) >=0:
-			cookiefrom=process.argv[++i];
+			cookiefrom = process.argv[++i];
 			continue;
 
 		case  ['-c','--cookie-jar'].indexOf(arg) >=0:
-			cookieto=process.argv[++i];
+			cookieto = process.argv[++i];
 			continue;
 
 		case  ['-s','--silent'].indexOf(arg) >=0:
@@ -140,19 +149,29 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case '--noproxy' ==arg: // conver xxx.com to xxx.com,*.xxx.com
-			pupargs.args.push('--proxy-bypass-list='+process.argv[++i].replace(/,/g, ';')+';*.'+process.argv[i].replace(/,/g, ';*.'));
+			pupargs.args.push('--proxy-bypass-list=' + process.argv[++i].replace(/,/g, ';') + ';*.' + process.argv[i].replace(/,/g, ';*.'));
 			continue;
 
 		case  ['-w','--write-out'].indexOf(arg) >=0:
-			writeout=process.argv[++i];
-			if (!writeout.includes("%{url_effective}")) { console.error("Option --writeout supports %{url_effeticve} only: %s", writeout); }
+			writeout = process.argv[++i];
+			if (! (writeout.includes("%{url_effective}") || writeout.includes("%{http_code}")) ) {
+				console.error("Option --writeout supports %{url_effeticve} and %{http_code} only: %s", writeout);
+			}
+			continue;
+
+		case  ['-i','--include'].indexOf(arg) >=0: // output headers also
+			incheaders = true;
+			continue;
+
+		case ['-D','--dump-header'].indexOf(arg) >=0: // output to file
+			dumpheaders = process.argv[++i];
 			continue;
 
 		case '--chromearg' ==arg:
 			pupargs.args.push(process.argv[++i]);
 			continue;
 
-		// curl options with second arg
+		// ignored curl options with second arg
 		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
 		case arg.startsWith('--cert'): 
@@ -163,31 +182,31 @@ for (i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
 		case  ['--hostpubmd5','--interface','--stderr--header','-H', '-d',
-			'--chipers','--connect-timeout','--continue-at,','-C', '--crlfile','-D','--dump-header','--engine',
+			'--chipers','--continue-at,','-C', '--crlfile','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
 			i++;
-		// ignore unknpwn options
+		// ignore unknown options
 		case arg.startsWith("-"):
 			console.error("ignore option: %s, result may differ from curl", arg);
 			continue;
 		}
 
 		// not an option = url
-		url=arg;
+		url = arg;
      }
 } 
 
 // check url -----------------
 if (!url) { // empty
-	console.error("you must at least specify an URL\n"+usage); return 1;
+	console.error("you must at least specify an URL\n%s", usage); process.exit(1);
 }
 if ( ! /^https*:\/\//.test(url) ) { //add missing http
-	url="http://"+url;
+	url = "http://"+url;
 }
 if ( ! isURL(url) ) { // not url
-	console.error("not a valid URL : %s", url); return 1;
+	console.error("not a valid URL : %s", url); process.exit(1);
 }
 
 
@@ -200,14 +219,14 @@ if ( ! isURL(url) ) { // not url
 	if (timeout && timeout>0) {
 		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
-				browser.close(); return 2;
+				browser.close(); process.exit(2);
   			}, timeout*1000
 		);}
 	
 	// set UA
 	if (!useragent) {
 		// remove headless from default UA
-		useragent=(await browser.userAgent()).replace(/headless/gi,'');
+		useragent = ( await browser.userAgent() ).replace(/headless/gi,'');
 	}
 	page.setUserAgent(useragent);
 	//set cookies
@@ -215,7 +234,7 @@ if ( ! isURL(url) ) { // not url
 		try { // ignore errors on cookie load
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to JSON
-			var cookies=curl2cookies(text);
+			var cookies = curl2cookies(text);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
@@ -226,7 +245,26 @@ if ( ! isURL(url) ) { // not url
 		} catch (ignore) {  }
 	}
 	// goto url wait for page loaded
-	await page.goto(url, pageargs);
+	var response = await page.goto(url, pageargs);
+	const finalurl = await page.url();
+	const httpcode = response.status();
+
+	// save headers for output
+	var headers = "";
+	if (incheaders || dumpheaders) {
+		var tmpheaders = response.headers();
+		// get HTTP protocol version
+		var httpversion = ( await page.evaluate(() => performance.getEntries()[0].nextHopProtocol) ).toUpperCase();
+		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
+		// add fake redirection
+		if (url != finalurl && finalurl != url+'/') {
+			headers = fakeredir + "Date: " + tmpheaders["date"] + "\n" + "Location: " + finalurl + "\n\n";
+		}
+		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
+		for (header in tmpheaders) {
+			headers += header + ': ' + tmpheaders[header] + "\n";
+		}	
+	}
 
 	// additional wait for final page composing
 	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
@@ -247,7 +285,7 @@ if ( ! isURL(url) ) { // not url
 
 	// create out dir if requested
 	if (mkdir && file.includes('/')) {
-		var dir=path.dirname(file);
+		var dir = path.dirname(file);
 		try {
 			if (! fs.existsSync(dir)) {
 				fs.mkdirSync(dir, { recursive: true });
@@ -255,26 +293,41 @@ if ( ! isURL(url) ) { // not url
 		} catch (err) {
 			// exit if out dir can't created
 			console.error("cannot cannot create path %s: %s", dir, err);
-			return 3;
+			process.exit(3);
 		}
 	}
 
 	// output html, - = stdout
 	if (html) {
+	    // output also headers
+	    if (incheaders) { html=headers+"\n"+html }
 	    if (file != '-') {
 		try { // to file
 			fs.writeFileSync(file, html);
 		} catch (err) {
 			console.error("cannot write to file %s: %s", file, err);
-			return 3;
+			process.exit(3);
 		} 
 	    } else { // to STDOUT
 		console.log(html);
 	    }
 	}
+	// dump headers to file
+	if (dumpheaders) {
+	    if (dumpheaders != '-') {
+		try { // to file
+			fs.writeFileSync(dumpheaders, headers);
+		} catch (err) {
+			console.error("cannot write headers to file %s: %s", dumpheaders, err);
+			process.exit(4);
+		} 
+	    } else { // to STDOUT
+		console.log(headers);
+	    }
+	}
 	// write final URL with -w
 	if (writeout) {
-		console.log(writeout.replace("%{url_effective}", await page.url()));
+		console.log(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
@@ -301,7 +354,7 @@ function sleep(ms) {
 }
 
 // converts a sting containing netscape cookies to an Array
-// retrun false if curl or wget signature is not detected
+// return false if curl or wget signature is not detected
 function curl2cookies(text) {
 	// split text into lines
 	var cookies = [];
