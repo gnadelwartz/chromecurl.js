@@ -246,6 +246,10 @@ if ( ! isURL(url) ) { // not url
 	}
 	// goto url wait for page loaded
 	var response = await page.goto(url, pageargs);
+
+	// additional wait for final page composing
+	if (wait && wait>0) { await sleep(wait*1000); }
+
 	const finalurl = await page.url();
 	const httpcode = response.status();
 
@@ -266,8 +270,6 @@ if ( ! isURL(url) ) { // not url
 		}	
 	}
 
-	// additional wait for final page composing
-	if (wait && wait>0 && file != "/dev/null") { await sleep(wait*1000); }
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
