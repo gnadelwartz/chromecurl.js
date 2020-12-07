@@ -1,8 +1,9 @@
 #!/usr/bin/env node
+/*jshint  esversion:8*/
 //
 // cookies.js - convert Netscape/Curl/Wget coookies to JSON
 //
-const fs = require('fs')
+const fs = require('fs');
 const file=process.argv[2];
 
 if (file) {
@@ -15,7 +16,7 @@ if (file) {
 		process.exit(1);
 	}
 } else {
-	console.error("Missing filename, usage: [node] cookies.js <curl-wget-cookie-file>")
+	console.error("Missing filename, usage: [node] cookies.js <curl-wget-cookie-file>");
 	process.exit(2);
 }
 
@@ -39,7 +40,7 @@ function curl2cookies(text) {
 		// a valid cookie line must have 7 tokens
 		if (tokens.length == 7) {
 			if (tokens[0].startsWith("#HttpOnly_")) {
-				cookie.domain = tokens[0].replace("#HttpOnly_", '')
+				cookie.domain = tokens[0].replace("#HttpOnly_", '');
 				cookie.httpOnly = true; 
 			} else {
 				cookie.domain = tokens[0];

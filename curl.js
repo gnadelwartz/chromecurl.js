@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/*jshint  esversion:8*/
 //
 // curl.js - a simple wrapper for puppeteer supporting many curl options
 //
@@ -69,18 +70,19 @@ const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Connection: keep-alive', '' ].join("\n");
 
 // parse arguments -------------
-for (i=2; i<process.argv.length; i++) {
+for (var i=2; i<process.argv.length; i++) {
     // split multiple single args -abc -> [-a, -b, -c ]
     var opt = [process.argv[i]];
     if (/^-[^-]./i.test(opt)) {
-	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el});
+	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el; });
     }
     // iterate over final args
-    for (arg of opt) {
+    for (var arg of opt) {
 	switch(true) {
 		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
 			process.exit(0);
+			break;
 
 		case '--compressed' ==arg: // chrome handles this
 		case '-L' ==arg: // follow redirect always active in chrome
@@ -91,14 +93,14 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case '--wait' ==arg: // wait extra  seconds
-			wait = process.argv[++i]
+			wait = process.argv[++i];
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
 				console.error("wait is not a number: %s", wait); process.exit(3);
 			}
 			continue;
 
 		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
-			timeout = process.argv[++i]
+			timeout = process.argv[++i];
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); process.exit(3);
 			}
@@ -187,6 +189,7 @@ for (i=2; i<process.argv.length; i++) {
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
 			i++;
+		/* falls through */
 		// ignore unknown options
 		case arg.startsWith("-"):
 			console.error("ignore option: %s, result may differ from curl", arg);
@@ -230,17 +233,18 @@ if ( ! isURL(url) ) { // not url
 	}
 	page.setUserAgent(useragent);
 	//set cookies
+	var cookies;
 	if (cookiefrom) {
 		try { // ignore errors on cookie load
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to JSON
-			var cookies = curl2cookies(text);
+			cookies = curl2cookies(text);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
 			// set browser cookies
 			if (cookies) {
-				await page.setCookie(...cookies)
+				await page.setCookie(...cookies);
 			}
 		} catch (ignore) {  }
 	}
@@ -265,7 +269,7 @@ if ( ! isURL(url) ) { // not url
 			headers = fakeredir + "Date: " + tmpheaders["date"] + "\n" + "Location: " + finalurl + "\n\n";
 		}
 		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
-		for (header in tmpheaders) {
+		for (var header in tmpheaders) {
 			headers += header + ': ' + tmpheaders[header] + "\n";
 		}	
 	}
@@ -277,7 +281,7 @@ if ( ! isURL(url) ) { // not url
 	if (file != "/dev/null") { html = await page.content(); }
 	// save cookies
 	if (cookieto) {
-		var cookies = await page.cookies();
+		cookies = await page.cookies();
 		try { // ignore errors on save
 			fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
 		} catch (ignore) {  }
@@ -302,7 +306,7 @@ if ( ! isURL(url) ) { // not url
 	// output html, - = stdout
 	if (html) {
 	    // output also headers
-	    if (incheaders) { html=headers+"\n"+html }
+	    if (incheaders) { html=headers+"\n"+html; }
 	    if (file != '-') {
 		try { // to file
 			fs.writeFileSync(file, html);
@@ -374,7 +378,7 @@ function curl2cookies(text) {
 		// a valid cookie line must have 7 tokens
 		if (tokens.length == 7) {
 			if (tokens[0].startsWith("#HttpOnly_")) {
-				cookie.domain = tokens[0].replace("#HttpOnly_", '')
+				cookie.domain = tokens[0].replace("#HttpOnly_", '');
 				cookie.httpOnly = true; 
 			} else {
 				cookie.domain = tokens[0];
