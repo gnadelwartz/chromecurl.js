@@ -123,7 +123,7 @@ for (var i=2; i<process.argv.length; i++) {
 		case ['-e','--referer'].indexOf(arg) >=0: // referer
 			var referer = process.argv[++i]; // must start with http
 			if ( ! /^https*:\/\//.test(url) ) { referer = "http://" + referer; }
-			pageargs['referer']=referer;
+			pageargs.referer=referer;
 			continue;
 
 		case ['-k','--insecure'].indexOf(arg) >=0: // ignore cert not valid, e.g. self signed
@@ -269,7 +269,7 @@ if ( ! isURL(url) ) { // not url
 		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
-			headers = fakeredir + "Date: " + tmpheaders["date"] + "\n" + "Location: " + finalurl + "\n\n";
+			headers = fakeredir + "Date: " + tmpheaders.date + "\n" + "Location: " + finalurl + "\n\n";
 		}
 		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
 		for (var header in tmpheaders) {
