@@ -15,7 +15,7 @@ const puppeteer = require('puppeteer');
 
 // default values ----------------------------
 const IAM = process.argv[1].replace(/.*\//,'');
-const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL\n	to show all options use: "+IMA+" --help";
 
 const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
 	'', usage, '',
@@ -39,6 +39,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'	-h|--help - show all options',
 	''
 	].join("\n");
 
