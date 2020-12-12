@@ -21,23 +21,25 @@ if (file) {
 }
 
 
-// converts a sting containing netscape cookies to an Array
-// retrun false if curl or wget signature is not detected
-function curl2cookies(text) {
-	// split text into lines
+// convert curl/wget cokkies to puppeter format
+// $1 = string, containing newline seperated data in netscape cookie file format
+// returns an array for use with puppeteer
+// return false if curl or wget signature is not detected
+function curl2cookies(source) {
+	// split source into lines
 	var cookies = [];
-	var lines = text.split("\n");
+	var lines = source.split("\n");
 
-	// not a curl/wget cookie file
+	// source is not a curl/wget/netscape cookie file
 	if (! lines[0].toLowerCase().includes("http cookie file")) { return false; }
  
-	// iterate over lines
+	// iterate over lines in array
 	lines.forEach(function(line, index){
-		// split lines into tokens
+		// split line into tab separated tokens
 		var tokens = line.split("\t").map(function(e){return e.trim();});
 		var cookie = {};
  
-		// a valid cookie line must have 7 tokens
+		// a valid cookie line must contian 7 tokens
 		if (tokens.length == 7) {
 			if (tokens[0].startsWith("#HttpOnly_")) {
 				cookie.domain = tokens[0].replace("#HttpOnly_", '');
@@ -50,7 +52,7 @@ function curl2cookies(text) {
 			cookie.path = tokens[2];
 			cookie.secure = tokens[3] === 'TRUE';
  
-			// Convert date to a readable format
+			// Convert timestamp to a readable format
 			var timestamp = tokens[4];
 			if (timestamp.length == 17){
 				timestamp = Math.floor(timestamp / 1000000 - 11644473600);
@@ -58,7 +60,7 @@ function curl2cookies(text) {
 			cookie.expiration = timestamp;
 			cookie.name = tokens[5];
 			cookie.value = tokens[6];
-			// Record the cookie.
+			// add cokkie to puppeter array
 			cookies.push(cookie);
 		}	
 	});
