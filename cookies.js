@@ -8,7 +8,7 @@ const file=process.argv[2];
 
 if (file) {
 	var text = fs.readFileSync(file, 'utf-8');
-	var cookies=curl2cookies(text);
+	var cookies=curl2puppet(text);
 	if (cookies) {
 		console.log(JSON.stringify(cookies,0,2));
 	} else {
@@ -25,7 +25,7 @@ if (file) {
 // $1 = string, containing newline seperated data in netscape cookie file format
 // returns an array for use with puppeteer
 // return false if curl or wget signature is not detected
-function curl2cookies(source) {
+function curl2puppet(source) {
 	// split source into lines
 	var cookies = [];
 	var lines = source.split("\n");
