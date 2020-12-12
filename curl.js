@@ -257,6 +257,9 @@ if ( ! isURL(url) ) { // not url
 	const finalurl = await page.url();
 	const httpcode = response.status();
 
+	// clear timeout
+	if (mytimeout) { clearTimeout(mytimeout); }
+
 	// save headers for output
 	var headers = "";
 	if (incheaders || dumpheaders) {
@@ -273,9 +276,6 @@ if ( ! isURL(url) ) { // not url
 			headers += header + ': ' + tmpheaders[header] + "\n";
 		}	
 	}
-
-	// clear timeout
-	if (mytimeout) { clearTimeout(mytimeout); }
 
 	// get page HMTL
 	if (file != "/dev/null") { html = await page.content(); }
