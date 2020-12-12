@@ -328,7 +328,7 @@ if ( ! isURL(url) ) { // not url
 			process.exit(4);
 		} 
 	    } else { // to STDOUT
-		console.log(headers);
+		console.log(headers.trim());
 	    }
 	}
 	// write final URL with -w
