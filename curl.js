@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/*jshint  esversion:8*/
 //
 // curl.js - a simple wrapper for puppeteer supporting many curl options
 //
@@ -14,7 +15,7 @@ const puppeteer = require('puppeteer');
 
 // default values ----------------------------
 const IAM = process.argv[1].replace(/.*\//,'');
-const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL";
+const usage = "usage: "+IAM+" [--wait s] [--max-time s] [--proxy|--socks[45] host[:port]] [curl_opt] URL\n        to show all options use: "+IAM+" --help";
 
 const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer (chromium) to download html code of web pages composed with javascript.',
 	'', usage, '',
@@ -38,6 +39,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'	-h|--help - show all options',
 	''
 	].join("\n");
 
@@ -69,18 +71,19 @@ const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Connection: keep-alive', '' ].join("\n");
 
 // parse arguments -------------
-for (i=2; i<process.argv.length; i++) {
+for (var i=2; i<process.argv.length; i++) {
     // split multiple single args -abc -> [-a, -b, -c ]
     var opt = [process.argv[i]];
     if (/^-[^-]./i.test(opt)) {
-	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el});
+	opt=opt[0].substring(1).split("").map(function(el) { return '-'+el; });
     }
     // iterate over final args
-    for (arg of opt) {
+    for (var arg of opt) {
 	switch(true) {
 		case ['-h','--help'].indexOf(arg) >=0:
 			console.log(help);
 			process.exit(0);
+			break;
 
 		case '--compressed' ==arg: // chrome handles this
 		case '-L' ==arg: // follow redirect always active in chrome
@@ -91,14 +94,14 @@ for (i=2; i<process.argv.length; i++) {
 			continue;
 
 		case '--wait' ==arg: // wait extra  seconds
-			wait = process.argv[++i]
+			wait = process.argv[++i];
 			if ( ! /^[\di\.]+$/.test(wait) ) { // not integer
 				console.error("wait is not a number: %s", wait); process.exit(3);
 			}
 			continue;
 
 		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
-			timeout = process.argv[++i]
+			timeout = process.argv[++i];
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); process.exit(3);
 			}
@@ -121,7 +124,7 @@ for (i=2; i<process.argv.length; i++) {
 		case ['-e','--referer'].indexOf(arg) >=0: // referer
 			var referer = process.argv[++i]; // must start with http
 			if ( ! /^https*:\/\//.test(url) ) { referer = "http://" + referer; }
-			pageargs['referer']=referer;
+			pageargs.referer=referer;
 			continue;
 
 		case ['-k','--insecure'].indexOf(arg) >=0: // ignore cert not valid, e.g. self signed
@@ -187,6 +190,7 @@ for (i=2; i<process.argv.length; i++) {
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
 			'-w','--write-out','-X','--request', '-y','-Y','-z','--time-cond','--max-redirs'].indexOf(arg) >=0: 
 			i++;
+		/* falls through */
 		// ignore unknown options
 		case arg.startsWith("-"):
 			console.error("ignore option: %s, result may differ from curl", arg);
@@ -230,17 +234,18 @@ if ( ! isURL(url) ) { // not url
 	}
 	page.setUserAgent(useragent);
 	//set cookies
+	var cookies;
 	if (cookiefrom) {
 		try { // ignore errors on cookie load
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
-			// convert from curl/wget to JSON
-			var cookies = curl2cookies(text);
+			// convert from curl/wget to puppeteer array
+			cookies = curl2puppet(text);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
 			// set browser cookies
 			if (cookies) {
-				await page.setCookie(...cookies)
+				await page.setCookie(...cookies);
 			}
 		} catch (ignore) {  }
 	}
@@ -253,6 +258,9 @@ if ( ! isURL(url) ) { // not url
 	const finalurl = await page.url();
 	const httpcode = response.status();
 
+	// clear timeout
+	if (mytimeout) { clearTimeout(mytimeout); }
+
 	// save headers for output
 	var headers = "";
 	if (incheaders || dumpheaders) {
@@ -262,22 +270,19 @@ if ( ! isURL(url) ) { // not url
 		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
-			headers = fakeredir + "Date: " + tmpheaders["date"] + "\n" + "Location: " + finalurl + "\n\n";
+			headers = fakeredir + "Date: " + tmpheaders.date + "\n" + "Location: " + finalurl + "\n\n";
 		}
 		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
-		for (header in tmpheaders) {
+		for (var header in tmpheaders) {
 			headers += header + ': ' + tmpheaders[header] + "\n";
 		}	
 	}
-
-	// clear timeout
-	if (mytimeout) { clearTimeout(mytimeout); }
 
 	// get page HMTL
 	if (file != "/dev/null") { html = await page.content(); }
 	// save cookies
 	if (cookieto) {
-		var cookies = await page.cookies();
+		cookies = await page.cookies();
 		try { // ignore errors on save
 			fs.writeFileSync(cookieto, JSON.stringify(cookies, 0 ,2)); 
 		} catch (ignore) {  }
@@ -302,7 +307,7 @@ if ( ! isURL(url) ) { // not url
 	// output html, - = stdout
 	if (html) {
 	    // output also headers
-	    if (incheaders) { html=headers+"\n"+html }
+	    if (incheaders) { html=headers+"\n"+html; }
 	    if (file != '-') {
 		try { // to file
 			fs.writeFileSync(file, html);
@@ -324,7 +329,7 @@ if ( ! isURL(url) ) { // not url
 			process.exit(4);
 		} 
 	    } else { // to STDOUT
-		console.log(headers);
+		console.log(headers.trim());
 	    }
 	}
 	// write final URL with -w
@@ -355,26 +360,28 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// converts a sting containing netscape cookies to an Array
+// convert curl/wget cokkies to puppeter format
+// $1 = string, containing newline seperated data in netscape cookie file format
+// returns an array for use with puppeteer
 // return false if curl or wget signature is not detected
-function curl2cookies(text) {
-	// split text into lines
+function curl2puppet(source) {
+	// split source into lines
 	var cookies = [];
-	var lines = text.split("\n");
+	var lines = source.split("\n");
 
-	// not a curl/wget cookie file
+	// source is not a curl/wget/netscape cookie file
 	if (! lines[0].toLowerCase().includes("http cookie file")) { return false; }
  
-	// iterate over lines
+	// iterate over lines in array
 	lines.forEach(function(line, index){
-		// split lines into tokens
+		// split line into tab separated tokens
 		var tokens = line.split("\t").map(function(e){return e.trim();});
 		var cookie = {};
  
-		// a valid cookie line must have 7 tokens
+		// a valid cookie line must contian 7 tokens
 		if (tokens.length == 7) {
 			if (tokens[0].startsWith("#HttpOnly_")) {
-				cookie.domain = tokens[0].replace("#HttpOnly_", '')
+				cookie.domain = tokens[0].replace("#HttpOnly_", '');
 				cookie.httpOnly = true; 
 			} else {
 				cookie.domain = tokens[0];
@@ -384,7 +391,7 @@ function curl2cookies(text) {
 			cookie.path = tokens[2];
 			cookie.secure = tokens[3] === 'TRUE';
  
-			// Convert date to a readable format
+			// Convert timestamp to a readable format
 			var timestamp = tokens[4];
 			if (timestamp.length == 17){
 				timestamp = Math.floor(timestamp / 1000000 - 11644473600);
@@ -392,7 +399,7 @@ function curl2cookies(text) {
 			cookie.expiration = timestamp;
 			cookie.name = tokens[5];
 			cookie.value = tokens[6];
-			// Record the cookie.
+			// add cokkie to puppeter array
 			cookies.push(cookie);
 		}	
 	});

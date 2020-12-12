@@ -1,9 +1,10 @@
 ## curl.js - a simple wrapper for puppeteer, supporting many  curl options
 
-###  Getting Started
+### Getting Started
 
  Save the file `curl.js` to a directory and install puppeteer: 
 
+	wget https://raw.githubusercontent.com/gnadelwartz/puppet-curl/master/curl.js
 	npm install puppeteer
 
  Making `curl.js` executeable on Linux/Unix/BSD system allow run it without typing node everytime.
@@ -43,6 +44,7 @@
 
 		--chromearg - add chromium command line arg (curl.js only), see
 				https://peter.sh/experiments/chromium-command-line-switches/
+		-h|--help - show all options
 
 
  Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
@@ -79,6 +81,24 @@
 
   var timeout = 30000;
   var wait = 0;
+```
+
+### Update puppeteer
+
+Update puppeteer once a while to get the latest security fixes and improvements.
+To update puppeteer go to the directory where you saved `curl.js` and execute the following command:
+
+```bash
+  npm update puppeteer
+```
+
+Instead a local copy you can use global (system wide) installed puppeteer also.
+In this case you have to rely on the administrators to update puppeteer.
+
+To see if a global installation is availible execute the folloing command:
+
+```bash
+  npm list -g puppeteer || echo "no global installation"
 ```
 
 ### Convert Cookies
