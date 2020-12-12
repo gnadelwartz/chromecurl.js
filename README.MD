@@ -50,10 +50,10 @@
  Other curl otions are not implemented and ignored. Thus you can make GET requests in an URL, but PUSH requests and data/form
  upload is currently not supported. FTP may never supported.
 
- Note: `curl.js` always follows redirects, like curl with `-L|--location`. If you want to see/trace redirects, you must use curl.
+ Note: `curl.js` always follows redirects, like curl with `-L|--location`. If you want to see/trace all http redirects you must use curl.
 
- Note2: Cookie file written by `curl.js -c|--cookie-jar` uses JSON format and is not compatible Netscape cookie format.
- `curl -b|--cookie` can read both Netscape/Curl/Wget and JSON format.
+ Note2: Cookie files written by `curl.js -c|--cookie-jar` uses JSON format and are not compatible with Curl/Wget/Netscape cookie file format.
+ `curl.js -b|--cookie` is able to read both file formats.
  
 
 
@@ -92,10 +92,10 @@ To update puppeteer go to the directory where you saved `curl.js` and execute th
   npm update puppeteer
 ```
 
-Instead a local copy you can use global (system wide) installed puppeteer also.
+Instead installing a local copy you can also use a global (system wide) installed puppeteer.
 In this case you have to rely on the administrators to update puppeteer.
 
-To see if a global installation is availible execute the folloing command:
+To check if a global installation is availible execute the folloing command:
 
 ```bash
   npm list -g puppeteer || echo "no global installation"
