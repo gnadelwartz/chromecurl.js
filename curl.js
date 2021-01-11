@@ -39,6 +39,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'	--klick xpath - klick on elment of Xpath description, waits wait+1 seconds',
 	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
 	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
@@ -182,6 +183,10 @@ for (var i=2; i<process.argv.length; i++) {
 			screenshot = process.argv[i].replace("--screenshot=", "");
 			continue;
 
+		case  ['--klick'].indexOf(arg) >=0: // click on element
+			klick = process.argv[++i];
+			continue;
+		//
 		// ignored curl options with second arg
 		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
@@ -263,11 +268,19 @@ if ( ! isURL(url) ) { // not url
 	// additional wait for final page composing
 	if (wait && wait>0) { await sleep(wait*1000); }
 
-	const finalurl = await page.url();
-	const httpcode = response.status();
-
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
+
+	if(klick) {
+		const element = await page.$x(klick);
+		if (element) { 
+			await element[0].click();
+			await sleep((wait+1)*1000);
+		 }
+	}
+
+	const finalurl = await page.url();
+	const httpcode = response.status();
 
 	// save headers for output
 	var headers = "";
