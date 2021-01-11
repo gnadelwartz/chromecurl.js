@@ -39,6 +39,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
 	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
 	''
@@ -54,7 +55,6 @@ var pupargs = {
 		'--no-sandbox',  
 		'--incognito', // use inkonito mode
 		//'--proxy-server=socks5://localhost:1080', // in case you want a default proxy
-		//'--windows-size=1200,100000' // big window to load as may as posible content
 	],
 	headless: true
 };
@@ -64,7 +64,7 @@ var pageargs = { waitUntil: 'load' };
 var timeout = 30000;
 var wait = 0;
 var file = '-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -175,6 +175,13 @@ for (var i=2; i<process.argv.length; i++) {
 			pupargs.args.push(process.argv[++i]);
 			continue;
 
+		case  ['--screenshot'].indexOf(arg) >=0: // take screenshot
+			screenshot = process.argv[++i];
+			continue;
+		case arg.startsWith("--screenshot="): // chrome like screenshot arg
+			screenshot = process.argv[i].replace("--screenshot=", "");
+			continue;
+
 		// ignored curl options with second arg
 		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
@@ -277,6 +284,17 @@ if ( ! isURL(url) ) { // not url
 		for (var header in tmpheaders) {
 			headers += header + ': ' + tmpheaders[header] + "\n";
 		}	
+	}
+
+	// take screeshpt
+	if (screenshot) {
+		var type="jpeg";
+		if (screenshot.endsWith('.png')) { type="png"; }
+		await page.screenshot({
+			path: screenshot,
+			type: type,
+			fullPage: true
+			});
 	}
 
 	// get page HMTL
