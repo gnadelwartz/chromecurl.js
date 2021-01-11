@@ -272,11 +272,18 @@ if ( ! isURL(url) ) { // not url
 	if (mytimeout) { clearTimeout(mytimeout); }
 
 	if(klick) {
-		const element = await page.$x(klick);
-		if (element) { 
+		var element
+		try { // ignore errors on save
+			element = await page.$x(klick);
+		} catch (err) {
+			console.error('Error in "--klick": '+err.message.split("\n")[0]);
+			browser.close(); process.exit(3);
+
+ 		}
+		if (element && typeof element[0] !== 'undefined') { 
 			await element[0].click();
 			await sleep((wait+1)*1000);
-		 }
+		}
 	}
 
 	const finalurl = await page.url();
