@@ -39,6 +39,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
 	''
 	].join("\n");
@@ -100,7 +101,7 @@ for (var i=2; i<process.argv.length; i++) {
 			}
 			continue;
 
-		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
+		case ['-m','--max-time','--connect-timeout','--timeout'].indexOf(arg) >=0: // timeout in seconds
 			timeout = process.argv[++i];
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); process.exit(3);
