@@ -45,7 +45,8 @@
 		--chromearg - add chromium command line arg (curl.js only), see
 				https://peter.sh/experiments/chromium-command-line-switches/
 
-		--klick xpath - klick on elment of Xpath description, waits wait+1 seconds
+		--klick xpath - klick on first element matches xpath expression, wait --wait+1 seconds
+	                        multiple "--klick xpath" options will be processed in given order
 		--screenshot file - takes a screenshot and save to file, format jpep or png
 		--timeout|--conect-timeout seconds - alias for --max-time
 

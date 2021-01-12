@@ -39,7 +39,8 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
-	'	--klick xpath - klick on elment of Xpath description, waits wait+1 seconds',
+	'	--klick xpath - klick on first element matches xpath expression, wait --wait+1 seconds',
+	'                       multiple "--klick xpath" options will be processed in given order',
 	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
 	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
@@ -65,7 +66,8 @@ var pageargs = { waitUntil: 'load' };
 var timeout = 30000;
 var wait = 0;
 var file = '-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot, klick;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
+const klick = [];
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -184,7 +186,7 @@ for (var i=2; i<process.argv.length; i++) {
 			continue;
 
 		case  ['--klick'].indexOf(arg) >=0: // click on element
-			klick = process.argv[++i];
+			klick.push(process.argv[++i]);
 			continue;
 		//
 		// ignored curl options with second arg
@@ -271,18 +273,22 @@ if ( ! isURL(url) ) { // not url
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
-	if(klick) {
-		var element
-		try { // ignore errors on save
-			element = await page.$x(klick);
-		} catch (err) {
-			console.error('Error in "--klick": '+err.message.split("\n")[0]);
+	// process klicks
+	if(klick.length >0) {
+		var element;
+		// iterate over klick array
+		for (var i = 0; i < arrayLength; i++) {
+		    try { // catch errors while xpath processing
+			element = await page.$x(klick[i]);
+		    } catch (err) {
+			console.error('Error in --klick option #'+ i+1 +': '+err.message.split("\n")[0]);
 			browser.close(); process.exit(3);
 
- 		}
-		if (element && typeof element[0] !== 'undefined') { 
+ 		    }
+		    if (element && typeof element[0] !== 'undefined') { 
 			await element[0].click();
 			await sleep((wait+1)*1000);
+		    }
 		}
 	}
 
