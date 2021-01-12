@@ -65,7 +65,7 @@ var pageargs = { waitUntil: 'load' };
 var timeout = 30000;
 var wait = 0;
 var file = '-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot, klick;
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
