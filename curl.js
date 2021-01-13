@@ -39,8 +39,8 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
 	'			https://peter.sh/experiments/chromium-command-line-switches/',
-	'	--klick xpath - klick on first element matches xpath expression, wait --wait+1 seconds',
-	'                       multiple "--klick xpath" options will be processed in given order',
+	'	--click xpath - click on first element matches xpath expression, wait --wait+1 seconds',
+	'                       multiple "--click xpath" options will be processed in given order',
 	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
 	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
@@ -67,7 +67,7 @@ var timeout = 30000;
 var wait = 0;
 var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
-const klick = [];
+const click = [];
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -185,8 +185,8 @@ for (var i=2; i<process.argv.length; i++) {
 			screenshot = process.argv[i].replace("--screenshot=", "");
 			continue;
 
-		case  ['--klick'].indexOf(arg) >=0: // click on element
-			klick.push(process.argv[++i]);
+		case  ['--click'].indexOf(arg) >=0: // click on element
+			click.push(process.argv[++i]);
 			continue;
 		//
 		// ignored curl options with second arg
@@ -273,15 +273,15 @@ if ( ! isURL(url) ) { // not url
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
-	// process klicks
-	if(klick.length >0) {
+	// process clicks
+	if(click.length >0) {
 		var element;
-		// iterate over klick array
+		// iterate over click array
 		for (var i = 0; i < arrayLength; i++) {
 		    try { // catch errors while xpath processing
-			element = await page.$x(klick[i]);
+			element = await page.$x(click[i]);
 		    } catch (err) {
-			console.error('Error in --klick option #'+ i+1 +': '+err.message.split("\n")[0]);
+			console.error('Error in --click option #'+ i+1 +': '+err.message.split("\n")[0]);
 			browser.close(); process.exit(3);
 
  		    }
