@@ -379,7 +379,8 @@ if ( ! isURL(url) ) { // not url
 	}
 	// write final URL with -w
 	if (writeout) {
-		console.log(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
+		// no newline afterwards
+		process.stdout.write(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.

@@ -89,6 +89,26 @@
   var wait = 0;
 ```
 
+
+### Examples
+
+#### follow non standard redirects
+
+More and more websites execute rediects with Javascript or similar instead of the location header
+defined in HTTP protocol. Tt's not possible to follow these type of redirects with `curl or `wget`.
+
+```bash
+# exmaple of not working redirect with curl
+curl -sL -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
+https://www.dealdoktor.de/goto/deal/361908/
+
+# make the redirect work with  curls.js
+curl.js -sL --wait 2 -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
+https://www.amazon.de/dp/B07PDHSPYD
+```
+ 
+
+
 ### Update puppeteer
 
 Update puppeteer once a while to get the latest security fixes and improvements.
