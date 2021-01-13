@@ -43,10 +43,10 @@
 		-D|--dump-header - dump headers to file
 
 		--chromearg - add chromium command line arg (curl.js only), see
-				https://peter.sh/experiments/chromium-command-line-switches/
+	                      https://peter.sh/experiments/chromium-command-line-switches/
 
-		--klick xpath - klick on first element matches xpath expression, wait --wait+1 seconds
-	                        multiple "--klick xpath" options will be processed in given order
+		--click CSS/xPath - click on first element matching CSS/xPath expression,
+	                            multiple "--click" options will be processed in given order
 		--screenshot file - takes a screenshot and save to file, format jpep or png
 		--timeout|--conect-timeout seconds - alias for --max-time
 
@@ -99,15 +99,47 @@ defined in HTTP protocol. Tt's not possible to follow these type of redirects wi
 
 ```bash
 # exmaple of not working redirect with curl
-curl -sL -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
+$ curl -sL -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
 https://www.dealdoktor.de/goto/deal/361908/
 
 # make the redirect work with  curls.js
-curl.js -sL --wait 2 -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
+$ curl.js -sL --wait 2 -w "%{url_effective}" -o /dev/null https://www.dealdoktor.de/goto/deal/361908/; echo
 https://www.amazon.de/dp/B07PDHSPYD
 ```
  
+#### get get content loaded on click
 
+Modern web applications dynamically loads content when you click on an element without changing the URL.
+`Curl` and `wget` can download the regular content, but nor the dynamivćally created content.
+
+`Curl.js` not only can download content created dynamically on page load,  it's also possible to
+specify a __series__ of elements to click on one by one to simulate user interaction.
+
+You can use CSS or xPath selectors to specify elements to click on, everything starting with `/` is interpreted as xPath.
+An easy way to get the required selectors is to use Chrome to
+[inspect source code and test selectors](https://yizeng.me/2014/03/23/evaluate-and-validate-xpath-css-selectors-in-chrome-developer-tools/)
+
+Example: URL `https://www.amazon.de/b/?node=18801940031` display an offers page where you can
+click on buttons to dynamically load comtent for categories. `Curl` can only load the overwiew page
+but not the content of the categories.
+
+```bash
+#########
+# curl load overview ony, even with changed URL as shown in browser
+$ curl -sL --compressed "https://www.amazon.de/?node=18801940031" >offers.html
+$ curl -sL --compressed "https://www.amazon.de/b/?node=18801940031&gb_f_deals1=sortOrder:BY_SCORE,dealTypes:LIGHTNING_DEAL&...." >lightning.html
+
+
+#########
+# curl.js load dynamic content, e.g. LIGHTNING_DEAL  (-L --compressed always on)
+$ curls.js -s --wait 2 "https://www.amazon.de/b/?node=18801940031" >offers.html 
+$ curls.js -s --wait 2 "https://www.amazon.de/b/?node=18801940031" --click "//div[@data-value=\"LIGHTNING_DEAL\"]" >lightning.html 
+
+
+# series of clicks to dynamically load LIGHTNING_DEAL with minimum 50% savings
+$ curls.js -sL --wait 2 "https://www.amazon.de/b/?node=18801940031"\
+		--click "//div[@data-value=\"LIGHTNING_DEAL\"]" --click "//div[@data-value=\"50-\"]" >lightning50+.html 
+```
 
 ### Update puppeteer
 

@@ -38,9 +38,9 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'	-D|--dump-header - dump headers to file',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
-	'			https://peter.sh/experiments/chromium-command-line-switches/',
-	'	--click xpath - click on first element matches xpath expression, wait --wait+1 seconds',
-	'                       multiple "--click xpath" options will be processed in given order',
+	'                     https://peter.sh/experiments/chromium-command-line-switches/',
+	'	--click CSS/xPath - click on first element matching CSS/xPath expression,',
+	'                           multiple "--click" options will be processed in given order',
 	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
 	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
@@ -64,7 +64,7 @@ var pupargs = {
 var pageargs = { waitUntil: 'load' };
 
 var timeout = 30000;
-var wait = 0;
+var wait = 1;
 var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
 const click = [];
@@ -268,26 +268,30 @@ if ( ! isURL(url) ) { // not url
 	var response = await page.goto(url, pageargs);
 
 	// additional wait for final page composing
-	if (wait && wait>0) { await sleep(wait*1000); }
+	if (wait>0) { await sleep(wait*1000);
 
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
 	// process clicks
 	if(click.length >0) {
-		var element;
+		var element, length=click.length;
 		// iterate over click array
-		for (var i = 0; i < arrayLength; i++) {
-		    try { // catch errors while xpath processing
-			element = await page.$x(click[i]);
+		for (var i = 0; i < length; i++) {
+		    try { // catch errors while CSS / xpath processing
+			if (click[i].startsWith('/')) {
+				element = await page.$x(click[i]); //xPtah
+			} else {
+				element = await page.$(click[i]); // CSS
+			}
 		    } catch (err) {
-			console.error('Error in --click option #'+ i+1 +': '+err.message.split("\n")[0]);
+			console.error('Error while click #'+ (i+1) +': '+err.message.split("\n")[0]);
 			browser.close(); process.exit(3);
 
  		    }
 		    if (element && typeof element[0] !== 'undefined') { 
 			await element[0].click();
-			await sleep((wait+1)*1000);
+			await sleep(wait*1000);
 		    }
 		}
 	}
