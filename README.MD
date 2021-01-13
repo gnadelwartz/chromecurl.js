@@ -93,7 +93,7 @@ additional options to deal with dynmic stuff.
 
 ### Examples
 
-#### follow non standard redirects
+#### Follow dynamic redirects
 
 Modern websites started to execute rediects with Javascript or similar instead of using the location header
 defined in HTTP protocol. It's not possible to follow these type of redirects with `curl` or `wget`.
@@ -109,7 +109,7 @@ $ curl.js -sL --wait 2 -w "%{url_effective}" -o /dev/null https://www.dealdoktor
 https://www.amazon.de/dp/B07PDHSPYD
 ```
  
-#### get get content loaded on click
+#### Get dynamic content after clicking on an element
 
 Web applications often loads content when you click on an element without changing the URL.
 `Curl` and `wget` can download the regular content, but not the dynamically loaded content.
