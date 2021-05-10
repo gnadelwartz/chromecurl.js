@@ -63,7 +63,7 @@ var pupargs = {
 
 var pageargs = { waitUntil: 'load' };
 
-var timeout = 30000;
+var timeout = 30;
 var wait = 1;
 var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
@@ -239,7 +239,7 @@ if ( ! isURL(url) ) { // not url
 		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
 				browser.close(); process.exit(2);
-  			}, timeout*1000
+  			}, (timeout+2)*1000
 		);}
 	
 	// set UA
@@ -265,10 +265,11 @@ if ( ! isURL(url) ) { // not url
 		} catch (ignore) {  }
 	}
 	// goto url wait for page loaded
+	pageargs.timeout=timeout*1000;
 	var response = await page.goto(url, pageargs);
 
 	// additional wait for final page composing
-	if (wait>0) { await sleep(wait*1000);
+	if (wait>0) { await sleep(wait*1000); }
 
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
