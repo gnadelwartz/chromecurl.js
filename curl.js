@@ -27,7 +27,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'	-k|--insecure - allow insecure SSL connections',
 	'	-o|--output <file> - write html to file',
 	'	--create-dirs - create path to file named by -o',
-	'	-b|--cookie name=value[;name=value;]|<file> - set cookies or read cookies from file',
+	'	-b|--cookie name=value|<file> - set cookies or raed cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
@@ -256,8 +256,7 @@ const parsedURL = new URL(url);
 	//set cookies
 	var cookies;
 	if (cookiefrom) {
-	    //try { // ignore errors on cookie load
-		if (cookiefrom.indexOf("=")) {
+		if (cookiefrom.includes('=')) {
 			// manual cookie, remove optional characters
 			cookiefrom = cookiefrom.replace(/="/g, '=').replace(/"*;\s*/g, ';');
 			cookies = [];
@@ -269,13 +268,14 @@ const parsedURL = new URL(url);
 				tmpval = tmparr[c].split('=');
 				if (tmpval.length != 2) { continue; }
 				// push to cokkies array
-				var values = {}
+				var values = {};
 				values.name = tmpval[0];
 				values.value = tmpval[1];
 				values.domain =  parsedURL.hostname;
 				cookies.push(values);
 			}
 		} else {
+		    try { // ignore errors on cookie load
 			// seems cookie file
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to puppeteer array
@@ -283,12 +283,12 @@ const parsedURL = new URL(url);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
-			// set browser cookies
-			if (cookies) {
-				await page.setCookie(...cookies);
-			}
+		    } catch (ignore) {  }
 		}
-	    // } catch (ignore) {  }
+		// set browser cookies
+		if (cookies) {
+			await page.setCookie(...cookies);
+		}
 	}
 	// goto url wait for page loaded
 	pageargs.timeout=timeout*1000;
