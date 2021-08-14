@@ -33,7 +33,7 @@ additional options to deal with dynmic stuff.
 		-k|--insecure - allow insecure SSL connections
 		-o|--output <file> - write html to file
 		--create-dirs - create path to file named by -o
-		-b|--cookie <file> - raed cookies from file
+		-b|--cookie name=value[;name=value;]|<file> - set cookies or read cookies from file
 		-c|--cookie--jar <file> - write cookies to file
 		-s|--silent - no error messages etc.
 		--noproxy <no-proxy-list> - comma seperated domain/ip list

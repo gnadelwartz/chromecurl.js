@@ -27,7 +27,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'	-k|--insecure - allow insecure SSL connections',
 	'	-o|--output <file> - write html to file',
 	'	--create-dirs - create path to file named by -o',
-	'	-b|--cookie <file> - raed cookies from file',
+	'	-b|--cookie name=value[;name=value;]|<file> - set cookies or read cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
@@ -52,10 +52,14 @@ var pupargs = {
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
 		'--no-first-run',
-		'--disable.gpu',
+		'--disable-gpu',
 		'--no-zygote',
 		'--no-sandbox',  
 		'--incognito', // use inkonito mode
+		'--disable-setuid-sandbox',
+		'--disable-dev-shm-usage',
+		'--disable-accelerated-2d-canvas',
+		'--no-first-run',
 		//'--proxy-server=socks5://localhost:1080', // in case you want a default proxy
 	],
 	headless: true
@@ -227,7 +231,8 @@ if ( ! /^https*:\/\//.test(url) ) { //add missing http
 if ( ! isURL(url) ) { // not url
 	console.error("not a valid URL : %s", url); process.exit(1);
 }
-
+// parse url
+const parsedURL = new URL(url);
 
 // run puppeter ---------------
 (async () => {
@@ -251,7 +256,27 @@ if ( ! isURL(url) ) { // not url
 	//set cookies
 	var cookies;
 	if (cookiefrom) {
-		try { // ignore errors on cookie load
+	    //try { // ignore errors on cookie load
+		if (cookiefrom.indexOf("=")) {
+			// manual cookie, remove optional characters
+			cookiefrom = cookiefrom.replace(/="/g, '=').replace(/"*;\s*/g, ';');
+			cookies = [];
+			// iterate over multiple cookies
+			var tmparr = cookiefrom.split(';');
+			var tmpval;
+			for(var c = 0; c < tmparr.length; c++) {			
+				// split key=value, must have one =
+				tmpval = tmparr[c].split('=');
+				if (tmpval.length != 2) { continue; }
+				// push to cokkies array
+				var values = {}
+				values.name = tmpval[0];
+				values.value = tmpval[1];
+				values.domain =  parsedURL.hostname;
+				cookies.push(values);
+			}
+		} else {
+			// seems cookie file
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to puppeteer array
 			cookies = curl2puppet(text);
@@ -262,7 +287,8 @@ if ( ! isURL(url) ) { // not url
 			if (cookies) {
 				await page.setCookie(...cookies);
 			}
-		} catch (ignore) {  }
+		}
+	    // } catch (ignore) {  }
 	}
 	// goto url wait for page loaded
 	pageargs.timeout=timeout*1000;
