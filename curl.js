@@ -293,6 +293,7 @@ const parsedURL = new URL(url);
 	// goto url wait for page loaded
 	pageargs.timeout=timeout*1000;
 	var response = await page.goto(url, pageargs);
+	var allheaders = response.headers();
 
 	// additional wait for final page composing
 	if (wait>0) { await sleep(wait*1000); }
@@ -300,8 +301,12 @@ const parsedURL = new URL(url);
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
-	// process clicks
+	// process clicks on html
 	if(click.length >0) {
+		if (allheaders['content-type'] != 'text/html') {
+			console.error('Warning: --click with non HTML content-type: '+allheaders['content-type']);
+		}
+		
 		var element, length=click.length;
 		// iterate over click array
 		for (var i = 0; i < length; i++) {
@@ -329,17 +334,16 @@ const parsedURL = new URL(url);
 	// save headers for output
 	var headers = "";
 	if (incheaders || dumpheaders) {
-		var tmpheaders = response.headers();
 		// get HTTP protocol version
 		var httpversion = ( await page.evaluate(() => performance.getEntries()[0].nextHopProtocol) ).toUpperCase();
 		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
-			headers = fakeredir + "Date: " + tmpheaders.date + "\n" + "Location: " + finalurl + "\n\n";
+			headers = fakeredir + "Date: " + allheaders.date + "\n" + "Location: " + finalurl + "\n\n";
 		}
 		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
-		for (var header in tmpheaders) {
-			headers += header + ': ' + tmpheaders[header] + "\n";
+		for (var header in allheaders) {
+			headers += header + ': ' + allheaders[header] + "\n";
 		}	
 	}
 
@@ -354,8 +358,14 @@ const parsedURL = new URL(url);
 			});
 	}
 
-	// get page HMTL
-	if (file != "/dev/null") { html = await page.content(); }
+	// get content HTML or raw
+	if (file != "/dev/null") {
+		if (allheaders['content-type'] == 'text/html') {
+			html = await page.content();
+		} else {
+			html = await response.text();
+		}
+	}
 	// save cookies
 	if (cookieto) {
 		cookies = await page.cookies();
@@ -391,8 +401,8 @@ const parsedURL = new URL(url);
 			console.error("cannot write to file %s: %s", file, err);
 			process.exit(3);
 		} 
-	    } else { // to STDOUT
-		console.log(html);
+	    } else { // to STDOUT without newline
+		process.stdout.write(html);
 	    }
 	}
 	// dump headers to file
