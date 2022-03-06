@@ -27,7 +27,7 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'	-k|--insecure - allow insecure SSL connections',
 	'	-o|--output <file> - write html to file',
 	'	--create-dirs - create path to file named by -o',
-	'	-b|--cookie <file> - raed cookies from file',
+	'	-b|--cookie name=value|<file> - set cookies or raed cookies from file',
 	'	-c|--cookie--jar <file> - write cookies to file',
 	'	-s|--silent - no error messages etc',
 	'	--noproxy <no-proxy-list> - comma seperated domain/ip list',
@@ -38,7 +38,11 @@ const help = ['', IAM+' is a simple drop in replacement for curl, using pupeteer
 	'	-D|--dump-header - dump headers to file',
 	'',
 	'	--chromearg - add chromium command line arg (curl.js only), see,',
-	'			https://peter.sh/experiments/chromium-command-line-switches/',
+	'                     https://peter.sh/experiments/chromium-command-line-switches/',
+	'	--click CSS/xPath - click on first element matching CSS/xPath expression,',
+	'                           multiple "--click" options will be processed in given order',
+	'	--screenshot file - takes a screenshot and save to file, format jpep or png',
+	'	--timeout|--conect-timeout seconds - alias for --max-time',
 	'	-h|--help - show all options',
 	''
 	].join("\n");
@@ -48,22 +52,26 @@ var pupargs = {
 		'--bswi', // disable as many as possible for a small foot print
 		'--single-process',
 		'--no-first-run',
-		'--disable.gpu',
+		'--disable-gpu',
 		'--no-zygote',
 		'--no-sandbox',  
 		'--incognito', // use inkonito mode
+		'--disable-setuid-sandbox',
+		'--disable-dev-shm-usage',
+		'--disable-accelerated-2d-canvas',
+		'--no-first-run',
 		//'--proxy-server=socks5://localhost:1080', // in case you want a default proxy
-		//'--windows-size=1200,100000' // big window to load as may as posible content
 	],
 	headless: true
 };
 
 var pageargs = { waitUntil: 'load' };
 
-var timeout = 30000;
-var wait = 0;
+var timeout = 30;
+var wait = 1;
 var file = '-';
-var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders;
+var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
+const click = [];
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -100,7 +108,7 @@ for (var i=2; i<process.argv.length; i++) {
 			}
 			continue;
 
-		case ['-m','--max-time','--connect-timeout'].indexOf(arg) >=0: // timeout in seconds
+		case ['-m','--max-time','--connect-timeout','--timeout'].indexOf(arg) >=0: // timeout in seconds
 			timeout = process.argv[++i];
 			if ( ! /^[\d\.]+$/.test(timeout) ) { // not integer
 				console.error("timeout is not a number: %s", timeout); process.exit(3);
@@ -174,6 +182,17 @@ for (var i=2; i<process.argv.length; i++) {
 			pupargs.args.push(process.argv[++i]);
 			continue;
 
+		case  ['--screenshot'].indexOf(arg) >=0: // take screenshot
+			screenshot = process.argv[++i];
+			continue;
+		case arg.startsWith("--screenshot="): // chrome like screenshot arg
+			screenshot = process.argv[i].replace("--screenshot=", "");
+			continue;
+
+		case  ['--click'].indexOf(arg) >=0: // click on element
+			click.push(process.argv[++i]);
+			continue;
+		//
 		// ignored curl options with second arg
 		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
@@ -212,7 +231,8 @@ if ( ! /^https*:\/\//.test(url) ) { //add missing http
 if ( ! isURL(url) ) { // not url
 	console.error("not a valid URL : %s", url); process.exit(1);
 }
-
+// parse url
+const parsedURL = new URL(url);
 
 // run puppeter ---------------
 (async () => {
@@ -224,7 +244,7 @@ if ( ! isURL(url) ) { // not url
 		mytimeout = setTimeout( function() {
 				console.error("Timeout of %ss reached", timeout);
 				browser.close(); process.exit(2);
-  			}, timeout*1000
+  			}, (timeout+2)*1000
 		);}
 	
 	// set UA
@@ -236,50 +256,116 @@ if ( ! isURL(url) ) { // not url
 	//set cookies
 	var cookies;
 	if (cookiefrom) {
-		try { // ignore errors on cookie load
+		if (cookiefrom.includes('=')) {
+			// manual cookie, remove optional characters
+			cookiefrom = cookiefrom.replace(/="/g, '=').replace(/"*;\s*/g, ';');
+			cookies = [];
+			// iterate over multiple cookies
+			var tmparr = cookiefrom.split(';');
+			var tmpval;
+			for(var c = 0; c < tmparr.length; c++) {			
+				// split key=value, must have one =
+				tmpval = tmparr[c].split('=');
+				if (tmpval.length != 2) { continue; }
+				// push to cokkies array
+				var values = {};
+				values.name = tmpval[0];
+				values.value = tmpval[1];
+				values.domain =  parsedURL.hostname;
+				cookies.push(values);
+			}
+		} else {
+		    try { // ignore errors on cookie load
+			// seems cookie file
 			var text = fs.readFileSync(cookiefrom, 'utf-8');
 			// convert from curl/wget to puppeteer array
 			cookies = curl2puppet(text);
 			if (!cookies) {
 				cookies = JSON.parse(text); // seems to be JSON already
 			}
-			// set browser cookies
-			if (cookies) {
-				await page.setCookie(...cookies);
-			}
-		} catch (ignore) {  }
+		    } catch (ignore) {  }
+		}
+		// set browser cookies
+		if (cookies) {
+			await page.setCookie(...cookies);
+		}
 	}
 	// goto url wait for page loaded
+	pageargs.timeout=timeout*1000;
 	var response = await page.goto(url, pageargs);
+	var allheaders = response.headers();
 
 	// additional wait for final page composing
-	if (wait && wait>0) { await sleep(wait*1000); }
-
-	const finalurl = await page.url();
-	const httpcode = response.status();
+	if (wait>0) { await sleep(wait*1000); }
 
 	// clear timeout
 	if (mytimeout) { clearTimeout(mytimeout); }
 
+	// process clicks on html
+	if(click.length >0) {
+		if (allheaders['content-type'] != 'text/html') {
+			console.error('Warning: --click with non HTML content-type: '+allheaders['content-type']);
+		}
+		
+		var element, length=click.length;
+		// iterate over click array
+		for (var i = 0; i < length; i++) {
+		    try { // catch errors while CSS / xpath processing
+			if (click[i].startsWith('/')) {
+				element = await page.$x(click[i]); //xPtah
+			} else {
+				element = await page.$(click[i]); // CSS
+			}
+		    } catch (err) {
+			console.error('Error while click #'+ (i+1) +': '+err.message.split("\n")[0]);
+			browser.close(); process.exit(3);
+
+ 		    }
+		    if (element && typeof element[0] !== 'undefined') { 
+			await element[0].click();
+			await sleep(wait*1000);
+		    }
+		}
+	}
+
+	const finalurl = await page.url();
+	const httpcode = response.status();
+
 	// save headers for output
 	var headers = "";
 	if (incheaders || dumpheaders) {
-		var tmpheaders = response.headers();
 		// get HTTP protocol version
 		var httpversion = ( await page.evaluate(() => performance.getEntries()[0].nextHopProtocol) ).toUpperCase();
 		if (httpversion == 'H2') { httpversion = "HTTP/2"; }
 		// add fake redirection
 		if (url != finalurl && finalurl != url+'/') {
-			headers = fakeredir + "Date: " + tmpheaders.date + "\n" + "Location: " + finalurl + "\n\n";
+			headers = fakeredir + "Date: " + allheaders.date + "\n" + "Location: " + finalurl + "\n\n";
 		}
 		headers += httpversion + " " + httpcode + " " + response.statusText() + "\n";
-		for (var header in tmpheaders) {
-			headers += header + ': ' + tmpheaders[header] + "\n";
+		for (var header in allheaders) {
+			headers += header + ': ' + allheaders[header] + "\n";
 		}	
 	}
 
-	// get page HMTL
-	if (file != "/dev/null") { html = await page.content(); }
+	// take screeshpt
+	if (screenshot) {
+		var type="jpeg";
+		if (screenshot.endsWith('.png')) { type="png"; }
+		await page.screenshot({
+			path: screenshot,
+			type: type,
+			fullPage: true
+			});
+	}
+
+	// get content HTML or raw
+	if (file != "/dev/null") {
+		if (allheaders['content-type'] == 'text/html') {
+			html = await page.content();
+		} else {
+			html = await response.text();
+		}
+	}
 	// save cookies
 	if (cookieto) {
 		cookies = await page.cookies();
@@ -315,8 +401,8 @@ if ( ! isURL(url) ) { // not url
 			console.error("cannot write to file %s: %s", file, err);
 			process.exit(3);
 		} 
-	    } else { // to STDOUT
-		console.log(html);
+	    } else { // to STDOUT without newline
+		process.stdout.write(html);
 	    }
 	}
 	// dump headers to file
@@ -334,7 +420,8 @@ if ( ! isURL(url) ) { // not url
 	}
 	// write final URL with -w
 	if (writeout) {
-		console.log(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
+		// no newline afterwards
+		process.stdout.write(writeout.replace("%{url_effective}", finalurl).replace("%{http_code}",httpcode));
 	}
 
     // catch errors, e.g. promises, unresoĺved/not existig host etc.
@@ -349,8 +436,7 @@ function isURL(str) {
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
     '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
     '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+    '(\\?[;&a-z\\d%_.~+=-]*)?' ,'i'); // query string
   return !!pattern.test(str);
 }
 
