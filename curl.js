@@ -73,6 +73,7 @@ var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
 const click = [];
 const extraheaders = {};
+let postdata;
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -197,11 +198,51 @@ for (var i=2; i<process.argv.length; i++) {
 		// set extra HTTP headers
 		case ['-H', '--header'].includes(arg):
 			const [key, value] = process.argv[++i].split(": ", 2);
-			extraheaders[key] = value;
+			extraheaders[key.toLowerCase()] = value;
+			continue;
+
+		// set post data
+		case ['-d', '--data', '--data-ascii', '--data-binary', '--data-raw', '--data-urlencode'].includes(arg):
+			let content = process.argv[++i];
+			let name;
+			let filename;
+			if (arg === '--data-urlencode' && content.startsWith('=')) {
+				content = content.replace(/^=/, '');
+			} else if (arg === '--data-urlencode' && content.includes('=')) {
+				[name, content] = content.split('=', 2);
+			} else if (arg !== '--data-raw' && content.startsWith('@')) {
+				filename = content.substring(1);
+			} else if (arg === '--data-urlencode' && content.includes('@')) {
+				[name, filename] = content.split('@', 2);
+			}
+			if (filename) {
+				if (filename === '-') {
+					content = process.stdin.read();
+				} else {
+					content = fs.readFileSync(filename, 'utf-8');
+				}
+			}
+			if (arg !== '--data-binary') {
+				 // carriage returns, newlines and null bytes are stripped out
+				 content = content.replaceAll('\r', '');
+				 content = content.replaceAll('\n', '');
+				 content = content.replaceAll('\0', '');
+			}
+			if (arg === '--data-urlencode') {
+				content = encodeURIComponent(content);
+			}
+			if (name) {
+				content = name + '=' + content;
+			}
+			if (postdata) {
+				postdata += '&';
+			} else {
+				postdata = '';
+			}
+			postdata += content;
 			continue;
 		//
 		// ignored curl options with second arg
-		case arg.startsWith('--data'):
 		case arg.startsWith('--retry'): 
 		case arg.startsWith('--cert'): 
 		case arg.startsWith('--ca'):
@@ -210,7 +251,7 @@ for (var i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--key'): 
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
-		case  ['--hostpubmd5','--interface','--stderr--header','-d',
+		case  ['--hostpubmd5','--interface','--stderr--header',
 			'--chipers','--continue-at,','-C', '--crlfile','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
@@ -260,7 +301,23 @@ const parsedURL = new URL(url);
 		useragent = ( await browser.userAgent() ).replace(/headless/gi,'');
 	}
 	await page.setUserAgent(useragent);
+
+	if (postdata) {
+		if (!extraheaders['content-type']) {
+			extraheaders['content-type'] = 'application/x-www-form-urlencoded';
+		}
+
+		await page.setRequestInterception(true);
+		page.once('request', (request) => {
+			request.continue({
+				//headers: extraheaders,
+				postData: postdata,
+			});
+		});
+	}
+
 	await page.setExtraHeaders(extraheaders);
+
 	//set cookies
 	var cookies;
 	if (cookiefrom) {
