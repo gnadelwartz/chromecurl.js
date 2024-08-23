@@ -72,6 +72,7 @@ var wait = 1;
 var file = '-';
 var url, mkdir, html, useragent, mytimeout,  cookiefrom, cookieto, writeout, incheaders, dumpheaders, screenshot;
 const click = [];
+const extraheaders = {};
 
 const fakeredir = ['HTTP/1.1 301 Moved Permanently',
 		'Server: Server',
@@ -192,6 +193,12 @@ for (var i=2; i<process.argv.length; i++) {
 		case  ['--click'].indexOf(arg) >=0: // click on element
 			click.push(process.argv[++i]);
 			continue;
+
+		// set extra HTTP headers
+		case ['-H', '--header'].includes(arg):
+			const [key, value] = process.argv[++i].split(": ", 2);
+			extraheaders[key] = value;
+			continue;
 		//
 		// ignored curl options with second arg
 		case arg.startsWith('--data'):
@@ -203,7 +210,7 @@ for (var i=2; i<process.argv.length; i++) {
 		case arg.startsWith('--key'): 
 		case arg.startsWith('--trace'): 
 		case arg.startsWith('--speed'):
-		case  ['--hostpubmd5','--interface','--stderr--header','-H', '-d',
+		case  ['--hostpubmd5','--interface','--stderr--header','-d',
 			'--chipers','--continue-at,','-C', '--crlfile','--engine',
 			'-E','-F','-K','--config','--libcurl','--limit-rate','--local-port','--max-filesize', 
 			'--pass','--pub-key','-T','--upload-file', '-u','--user','-U','--proxy-user',
@@ -252,7 +259,8 @@ const parsedURL = new URL(url);
 		// remove headless from default UA
 		useragent = ( await browser.userAgent() ).replace(/headless/gi,'');
 	}
-	page.setUserAgent(useragent);
+	await page.setUserAgent(useragent);
+	await page.setExtraHeaders(extraheaders);
 	//set cookies
 	var cookies;
 	if (cookiefrom) {
